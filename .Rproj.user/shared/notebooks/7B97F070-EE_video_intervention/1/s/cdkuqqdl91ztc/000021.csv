@@ -1,0 +1,5 @@
+"0",""
+"0","# Q11: Where do you receive your primary information on vaccine?"
+"0","df_video_intervention %>% "
+"0","  group_by(QQ) %>% "
+"0","  summarise_at(vars(Q11_1, Q11_2, Q11_3, Q11_4, Q11_5, Q11_6, Q11_7), funs(counts))"

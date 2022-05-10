@@ -1,0 +1,5 @@
+"0",""
+"0","# Q9: occupation"
+"0","df_video_intervention %>% "
+"0","  group_by(QQ) %>% "
+"0","  summarise_at(vars(occupation), funs(counts))"

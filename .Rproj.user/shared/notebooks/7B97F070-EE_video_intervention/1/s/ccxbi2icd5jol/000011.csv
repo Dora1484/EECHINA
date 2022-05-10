@@ -1,0 +1,13 @@
+"0","df_video_intervention %>%"
+"0","  select(vaccination_status, QQ) %>%"
+"0","  tbl_summary("
+"0","    statistic = all_continuous() ~ ""{mean} ({sd})"","
+"0","    by = QQ"
+"0","  ) %>%"
+"0","  add_p()  "
+"2","[36mi[39m Column(s) [32m[32mQQ[32m[39m are class [34m[34m""haven_labelled""[34m[39m. This is an intermediate datastructure not meant for analysis. Convert columns with `haven::as_factor()`, `labelled::to_factor()`, `labelled::unlabelled()`, and `unclass()`. [34m[34m""haven_labelled""[34m[39m value labels are ignored when columns are not converted. Failure to convert may have unintended consequences or result in error.
+"
+"2","* https://haven.tidyverse.org/articles/semantics.html
+"
+"2","* https://larmarange.github.io/labelled/articles/intro_labelled.html#unlabelled
+"

@@ -1,0 +1,4 @@
+"0","# Q2: Has anyone in your family, neighbors, coworkers, friends or other people you know been diagnosed with the new coronavirus disease? (2-1: family member; 2-2: friend; 2-3 neighbors; 2-4 coworkers; 2-5 others)"
+"0","df_video_intervention %>% "
+"0","  group_by(QQ) %>% "
+"0","  summarise_at(vars(Q1, Q2_1, Q2_2, Q2_3, Q2_4, Q2_5), funs(counts))"

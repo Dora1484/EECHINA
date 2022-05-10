@@ -1,0 +1,5 @@
+"0",""
+"0","# Q4: gender"
+"0","df_video_intervention %>% "
+"0","  group_by(QQ) %>% "
+"0","  summarise_at(vars(gender), funs(counts))"

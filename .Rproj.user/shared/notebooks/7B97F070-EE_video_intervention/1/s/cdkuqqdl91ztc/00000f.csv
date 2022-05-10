@@ -1,0 +1,19 @@
+"0","# Q1: Have you ever been diagnosed with the new coronavirus disease?"
+"0","df_video_intervention %>% "
+"0","  group_by(QQ) %>% "
+"0","  summarise_at(vars(Q1, Q2_1, Q2_2, Q2_3, Q2_4, Q2_5), funs(counts))"
+"2","Warning:"
+"2"," `funs()` was deprecated in dplyr 0.8.0.
+Please use a list of either functions or lambdas: 
+
+  # Simple named list: 
+  list(mean = mean, median = median)
+
+  # Auto named with `tibble::lst()`: 
+  tibble::lst(mean, median)
+
+  # Using lambdas
+  list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+[90mThis warning is displayed once every 8 hours.[39m
+[90mCall `lifecycle::last_lifecycle_warnings()` to see where this warning was generated.[39m
+"

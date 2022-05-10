@@ -1,0 +1,60 @@
+"0",""
+"0","summary(glm(data = df_video_intervention, vaccination_status ~ hope, family = binomial())) "
+"0","summary(lm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, famil = binomial()))"
+"2","Warning:"
+"2"," In lm.fit(x, y, offset = offset, singular.ok = singular.ok, ...) :
+ extra argument ‘famil’ will be disregarded
+"
+"0","sink()"
+"0",""
+"0","mod1 <- ""# a path"
+"0","         vaccine_confidence ~ a * hope"
+"0",""
+"0","         # b path"
+"0","         vaccination_status ~ b * vaccine_confidence"
+"0",""
+"0","         # c prime path "
+"0","         vaccination_status ~ cp * hope"
+"0",""
+"0","         # indirect and total effects"
+"0","         ab := a * b"
+"0","         total := cp + ab"""
+"0",""
+"0","fsem1 <- sem(mod1, data = df_video_intervention, se = ""bootstrap"", bootstrap = 10000) # fit structural equation models"
+"2","Warning in lavaan(slotOptions = lavoptions, slotParTable = lavpartable,  :"
+"2","
+ "
+"2"," lavaan WARNING:
+    the optimizer warns that a solution has NOT been found!
+"
+"2","Warning in lavaan(slotOptions = lavoptions, slotParTable = lavpartable,  :"
+"2","
+ "
+"2"," lavaan WARNING:
+    the optimizer warns that a solution has NOT been found!
+"
+"2","Warning in lavaan(slotOptions = lavoptions, slotParTable = lavpartable,  :"
+"2","
+ "
+"2"," lavaan WARNING:
+    the optimizer warns that a solution has NOT been found!
+"
+"2","Warning in lav_bootstrap_internal(object = NULL, lavmodel. = lavmodel, lavsamplestats. = lavsamplestats,  :"
+"2","
+ "
+"2"," lavaan WARNING: only 9996 bootstrap draws were successful
+"
+"0","sink(""fsem.txt"")"
+"0","summary(fsem1)"
+"0","sink()"
+"0",""
+"0","model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope + age + gender "
+"0","             + residence + education + occupation + income)"
+"0","model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence + age + gender + residence + education + occupation + income, family = ""binomial"")"
+"0","sem <- mediate(model1, model2, treat = ""hope"", mediator = ""vaccine_confidence"", boot = T)"
+"2","Running nonparametric bootstrap
+
+"
+"0","sink(""sem.txt"")"
+"0","summary(sem)"
+"0","plot(sem)"

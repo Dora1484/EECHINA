@@ -1,0 +1,4 @@
+"0",""
+"0","df_video_intervention %>%"
+"0","  summarise_at(vars(vaccine_hesitancy,  hope),"
+"0","               list(~mean(.), ~sd(.)))"

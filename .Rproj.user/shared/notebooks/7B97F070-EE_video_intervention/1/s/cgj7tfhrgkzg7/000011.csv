@@ -1,0 +1,4 @@
+"0","confidence_tibble<-df_video_intervention %>%"
+"0","#  group_by(vaccination_status) %>%"
+"0","  summarise(mean(vaccine_confidence))"
+"0","confidence_tibble"

@@ -1,0 +1,691 @@
+---
+title: "EE video trial_China"
+author: "Finley_Yu"
+date: "2021/6/22"
+output: html_document
+---
+
+```{r setup and load library}
+# setup
+set.seed(123)
+library(tidyverse) # pipeline operation 
+library(haven) 
+library(ggplot2) # 
+library(weights) # weighted result
+library(srvyr) # deal with survey data
+library(fastR2) 
+library(readxl)
+library(lavaan)
+library(psych)
+library(MBESS)
+library(mediation)
+library(here) # get current path
+```
+
+```{r load dataset}
+df_video_intervention <- read_sav(here("Data","china_data","20210601 data video intervention.sav"))
+
+## variable coding ------
+## SS: consent to participate
+## QQ: grouping: 1 - intervention group a; 2 - intervention group b; 3 - intervention group c; 4 - control group
+df_video_intervention$group <- as.factor(df_video_intervention$QQ)
+## PartVQ: 1 - those who can see the fourth option; 2 - those who cannot
+## LA (ordinary vaccine)\LB (COVID-19 vaccine): from 1 - strong disagree to 5 - strongly agree
+## LC: 1 - yes; 2 - no
+## Basic infomation Q1 - Q11
+## 
+df_video_intervention$age <- as.factor(df_video_intervention$Q3A)
+df_video_intervention$gender <- as.factor(df_video_intervention$Q4)
+df_video_intervention$province <- as.factor(df_video_intervention$Q5)
+df_video_intervention$ethnicity <- as.factor(df_video_intervention$Q6)
+df_video_intervention$residence <- as.factor(df_video_intervention$Q7)
+df_video_intervention$education <- as.factor(df_video_intervention$Q8)
+df_video_intervention$occupation <- as.factor(df_video_intervention$Q9)
+df_video_intervention$income <- as.factor(df_video_intervention$Q10)
+
+```
+
+## Sample characteristics
+
+```{r}
+# Q1: Have you ever been diagnosed with the new coronavirus disease?
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(Q1, Q2_1, Q2_2, Q2_3, Q2_4, Q2_5), funs(counts))
+
+# Q2: Has anyone in your family, neighbors, coworkers, friends or other people you know been diagnosed with the new coronavirus disease? (2-1: family member; 2-2: friend; 2-3 neighbors; 2-4 coworkers; 2-5 others)
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(Q1, Q2_1, Q2_2, Q2_3, Q2_4, Q2_5), funs(counts))
+
+# Q3: Age
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(age), funs(counts))
+
+# Q4: gender
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(gender), funs(counts))
+
+# Q5: province
+df_province <- df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(province), funs(counts))
+#write.csv(df_province, file = "result/tables/province.csv")
+
+# Q6: ethnicity
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(ethnicity), funs(counts))
+
+# Q7: residence
+df_video_intervention %>% 
+#  group_by(QQ) %>% 
+  summarise_at(vars(residence), funs(counts))
+
+# Q8: education
+df_video_intervention %>% 
+#  group_by(QQ) %>% 
+  summarise_at(vars(education), funs(counts))
+
+# Q9: occupation
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(occupation), funs(counts))
+
+# Q10: income
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(income), funs(counts))
+
+# Q11: Where do you receive your primary information on vaccine?
+df_video_intervention %>% 
+  group_by(QQ) %>% 
+  summarise_at(vars(Q11_1, Q11_2, Q11_3, Q11_4, Q11_5, Q11_6, Q11_7), funs(counts))
+```
+
+There remains the doubt whether Q11 should be put into the sample characteristics section.
+
+!!! All the statistical analysis (except for the counting) should be applied with sampling weights.
+
+## Primary outcomes: vaccine hesitancy, hope, vaccination status
+
+```{r, echo=FALSE}
+### 1. vaccine hesitancy ---------
+#### transform the negative problem scores to the positive 
+attach(df_video_intervention)
+df_video_intervention$vaccine_hesitancy <- ((6 - LA_1) + (6 - LA_2) + (6 - LA_3) + (6 - LA_4) + LA_5 +(6 - LA_6) + (6 - LA_7) + (6 - LA_8) + LA_9 + LA_10 + (6 - LA_11) + LA_12 + LA_13 + LA_14) / 14
+df_video_intervention$vaccine_confidence <- 6 - df_video_intervention$vaccine_hesitancy
+detach()
+
+### 2. COVID-19 vaccine hesitancy ----
+#### transform the negative problem scores to the positive 
+attach(df_video_intervention)
+df_video_intervention$covid19_vaccine_hesitancy <- ((6 - LB_1) + (6 - LB_2) + (6 - LB_3) + (6 - LB_4) + LB_5 +(6 - LB_6) + (6 - LB_7) + (6 - LB_8) + LB_9 + LB_10 + LB_11 + LB_12) / 12
+df_video_intervention$covid19_vaccine_confidence <- 6 - df_video_intervention$covid19_vaccine_hesitancy
+detach()
+
+### 3. vaccination status ----
+df_video_intervention$vaccination_status = ifelse(df_video_intervention$LC_2==2,0,1)
+
+### 4. hope scale --------
+# agency
+df_video_intervention$agency = with(df_video_intervention, (I1_2 + I1_9 + I1_10 + I1_12)/4)
+# pathway
+df_video_intervention$pathway = with(df_video_intervention, (I1_1 + I1_4 + I1_6 + I1_8)/4)
+# hope
+df_video_intervention$hope = (df_video_intervention$agency + df_video_intervention$pathway)/2
+
+### some statistics of outcome -----
+df_video_intervention %>%
+  group_by(vaccination_status) %>%
+  summarise_at(vars(vaccine_hesitancy,  hope),
+               list(~mean(.), ~sd(.), ~n()))
+
+df_video_intervention %>%
+  summarise_at(vars(vaccine_hesitancy,  hope),
+               list(~mean(.), ~sd(.)))
+
+
+
+summary(glm(data = df_video_intervention, vaccination_status~hope+vaccine_hesitancy, family = "binomial"))
+
+summary(glm(data = df_video_intervention, hope~vaccine_hesitancy))
+
+
+```
+
+## Adding Weights
+
+```{r}
+df_weight <- read_xlsx(path = "Weights.xlsx", sheet = 1, na = "NA")
+
+df_video_intervention$weight <- rep(0,12000)
+
+for (i in 1:12000){
+  j = df_video_intervention$Q4[i] # gender
+  k = df_video_intervention$Q5[i] # province
+  l = df_video_intervention$Q7[i] # residence
+  df_video_intervention$weight[i] = as.numeric(df_weight[k,2*j+l-2]) 
+}
+```
+
+##Vaccine hesitancy
+###Vaccine hesitancy (group by study arms)
+
+```{r differences between the 4 study arms}
+library(gtsummary)
+df_video_intervention %>%
+  filter(vaccination_status==0) %>%
+  select(vaccine_hesitancy, QQ) %>%
+  tbl_summary(
+    statistic = all_continuous() ~ "{mean} ({sd})",
+    by = QQ
+  ) %>%
+  add_p()
+
+df_video_intervention %>%
+  select(vaccination_status, QQ) %>%
+  tbl_summary(
+    statistic = all_continuous() ~ "{mean} ({sd})",
+    by = QQ
+  ) %>%
+  add_p()  
+```
+
+###Common vaccine hesitancy
+
+```{r visualization}
+# grouped by intervention
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(QQ))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Group", labels = c("Intervention group a", "Intervention group b", "Intervention group c", "Control group")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by age
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(age))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Age group", labels = c("18 to 29", "30 to 39", "40 to 49", "50 to 59", "60 or above")) + theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by gender
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(gender))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Gender", labels = c("Male", "Female")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by residence
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(residence))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Residence", labels = c("Rural", "Urban")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+
+# grouped by education
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(education))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Education", labels = c("No primary school", "Primary school", "Middle school", "High school", "College/undergraduate", "Master's degree or above")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+
+```
+
+### COVID-19 vaccine hesitancy.
+
+```{r}
+# grouped by intervention
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(QQ))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Group", labels = c("Intervention group a", "Intervention group b", "Intervention group c", "Control group")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by age
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(age))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Age group", labels = c("18 to 29", "30 to 39", "40 to 49", "50 to 59", "60 or above")) + theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by gender
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(gender))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Gender", labels = c("Male", "Female")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by residence
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(residence))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Residence", labels = c("Rural", "Urban")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+
+# grouped by education
+library(ggplot2)
+ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(education))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Education", labels = c("No primary school", "Primary school", "Middle school", "High school", "College/undergraduate", "Master's degree or above")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+```
+
+### T test of the vaccine hesitancy
+
+Mean score and 95% CI of each treatment group.
+
+```{r}
+# t test
+# treatment vs. control
+
+df_video_intervention_a = subset(df_video_intervention,QQ==1)
+df_video_intervention_b = subset(df_video_intervention,QQ==2)
+df_video_intervention_c = subset(df_video_intervention,QQ==3)
+df_video_intervention_control = subset(df_video_intervention,QQ==4)
+
+wtd.t.test(df_video_intervention_a$vaccine_hesitancy_score, df_video_intervention_control$vaccine_hesitancy_score,df_video_intervention_a$weight,df_video_intervention_control$weight)
+
+wtd.t.test(df_video_intervention_a$covid19_vaccine_hesitancy_score, df_video_intervention_control$covid19_vaccine_hesitancy_score,df_video_intervention_a$weight,df_video_intervention_control$weight)
+
+wtd.t.test(df_video_intervention_b$vaccine_hesitancy_score, df_video_intervention_control$vaccine_hesitancy_score,df_video_intervention_b$weight,df_video_intervention_control$weight)
+
+wtd.t.test(df_video_intervention_b$covid19_vaccine_hesitancy_score, df_video_intervention_control$covid19_vaccine_hesitancy_score,df_video_intervention_b$weight,df_video_intervention_control$weight)
+
+wtd.t.test(df_video_intervention_c$vaccine_hesitancy_score, df_video_intervention_control$vaccine_hesitancy_score,df_video_intervention_c$weight,df_video_intervention_control$weight)
+
+wtd.t.test(df_video_intervention_c$covid19_vaccine_hesitancy_score, df_video_intervention_control$covid19_vaccine_hesitancy_score,df_video_intervention_c$weight,df_video_intervention_control$weight)
+
+
+#between treatments
+
+df_vaccine_hesitancy_treatment = subset(df_video_intervention,QQ==1|QQ==2|QQ==3,select=c(QQ,vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+
+ws=sum(df_vaccine_hesitancy_treatment$weight)
+
+fit_vaccine=aov((vaccine_hesitancy_score*weight/ws) ~ factor(QQ), data=df_vaccine_hesitancy_treatment)
+
+summary(fit_vaccine)
+
+fit_covid19_vaccine=aov((covid19_vaccine_hesitancy_score*weight/ws) ~ factor(QQ), data=df_vaccine_hesitancy_treatment)
+
+summary(fit_covid19_vaccine)
+
+```
+
+
+##Hope score(score, upper&lower value[each block])
+
+```{r}
+library(gtsummary)
+df_video_intervention %>%
+  mutate(
+    income_level = case_when(
+      as.numeric(income) <= 4 ~ 1,
+      as.numeric(income) > 4 ~ 2),
+    education_level = case_when(
+      as.numeric(education) <= 3 ~ 1,
+      as.numeric(education) > 3 ~ 2,
+    )
+  ) %>%
+  select(income_level, education_level, residence, hope, vaccination_status) %>%
+  summarise(
+    hope_rural_yes = mean(hope[residence == 1 & vaccination_status == 1]),
+    hope_rural_yes_n = sum(residence == 1 & vaccination_status == 1),
+    hope_rural_yes_upp = mean(hope[residence == 1 & vaccination_status == 1]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
+    hope_rural_yes_low = mean(hope[residence == 1 & vaccination_status == 1]) - 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
+    
+    hope_rural_no = mean(hope[residence == 1 & vaccination_status == 0]),
+    hope_rural_no_n = sum(residence == 1 & vaccination_status == 0),
+    hope_rural_no_upp = mean(hope[residence == 1 & vaccination_status == 0]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 0])/sqrt(hope_rural_no_n),
+    hope_rural_no_low = mean(hope[residence == 1 & vaccination_status == 0]) - 1.96 * sd(hope[residence == 1 & vaccination_status == 0])/sqrt(hope_rural_no_n),
+    
+    hope_poor_yes = mean(hope[income_level == 1 & vaccination_status == 1]),
+    hope_poor_yes_n = sum(income_level == 1 & vaccination_status == 1),
+    hope_poor_yes_upp = mean(hope[income_level == 1 & vaccination_status == 1]) + 1.96 * sd(hope[income_level == 1 & vaccination_status == 1])/sqrt(hope_poor_yes_n),
+    hope_poor_yes_low = mean(hope[income_level == 1 & vaccination_status == 1]) - 1.96 * sd(hope[income_level == 1 & vaccination_status == 1])/sqrt(hope_poor_yes_n),
+    
+    hope_poor_no = mean(hope[income_level == 1 & vaccination_status == 0]),
+    hope_poor_no_n = sum(income_level == 1 & vaccination_status == 0),
+    hope_poor_no_upp = hope_poor_no + 1.96 * sd(hope[income_level == 1 & vaccination_status == 0])/sqrt(hope_rural_yes_n),
+    hope_poor_no_low = hope_poor_no - 1.96 * sd(hope[income_level == 1 & vaccination_status == 0])/sqrt(hope_rural_yes_n),
+    
+    hope_lowedu_yes = mean(hope[education_level == 1 & vaccination_status == 1]),
+    hope_lowedu_yes_n = sum(education_level == 1 & vaccination_status == 1),
+    hope_lowedu_yes_upp = hope_lowedu_yes + 1.96 * sd(hope[education_level == 1 & vaccination_status == 1])/sqrt(hope_lowedu_yes_n),
+    hope_lowedu_yes_low = hope_lowedu_yes - 1.96 * sd(hope[education_level == 1 & vaccination_status == 1])/sqrt(hope_lowedu_yes_n),
+    
+    hope_lowedu_no = mean(hope[education_level == 1 & vaccination_status == 0]),
+    hope_lowedu_no_n = sum(education_level == 1 & vaccination_status == 0),
+    hope_lowedu_no_upp = hope_lowedu_no + 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
+    hope_lowedu_no_low = hope_lowedu_no - 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
+  )
+```
+
+##Mediation analysis
+
+```{r mediation analysis}
+sink("mediation regression.txt")
+hope_tibble<-df_video_intervention %>% 
+#  group_by(vaccination_status) %>%
+  summarise(mean(hope)) 
+hope_tibble
+confidence_tibble<-df_video_intervention %>%
+#  group_by(vaccination_status) %>%
+  summarise(mean(vaccine_confidence))
+confidence_tibble
+
+summary(glm(data = df_video_intervention, vaccination_status ~ hope, family = binomial())) 
+summary(lm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, famil = binomial()))
+
+sink()
+
+mod1 <- "# a path
+         vaccine_confidence ~ a * hope
+
+         # b path
+         vaccination_status ~ b * vaccine_confidence
+
+         # c prime path 
+         vaccination_status ~ cp * hope
+
+         # indirect and total effects
+         ab := a * b
+         total := cp + ab"
+
+fsem1 <- sem(mod1, data = df_video_intervention, se = "bootstrap", bootstrap = 10000) # fit structural equation models
+
+sink("fsem.txt")
+summary(fsem1)
+sink()
+
+model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope + age + gender 
+             + residence + education + occupation + income)
+model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence + age + gender + residence + education + occupation + income, family = "binomial")
+sem <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
+
+sink("sem.txt")
+summary(sem)
+plot(sem)
+sink()
+
+model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope)
+model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, family = "binomial")
+sem0 <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
+
+summary(sem0)
+plot(sem0)
+
+
+# semb<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male + urban  + college + poor + provider, data = comdem[black == 1,], n.iter = 10000)
+# sink("fsem_blk.txt")
+# summary(semb)
+# 
+# sink()
+# 
+# 
+# semu<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + college + poor + provider, data = comdem[urban == 1,], n.iter = 10000)
+# sink("fsem_urban.txt")
+# 
+# summary(semu)
+# sink()
+# 
+# semu<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + college + poor + provider, data = comdem[urban == 0,], n.iter = 10000)
+# semc<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + urban + poor + provider, data = comdem[college == 0,], n.iter = 10000)
+# semp<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + urban + college + provider, data = comdem[poor == 1,], n.iter = 10000)
+# 
+# sink("fsem_ucp.txt")
+# 
+# summary(semu)
+# summary(semc)
+# summary(semp)
+# sink()
+# 
+# semm<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male + urban + black + college + poor + provider, data = comdem, n.iter = 10000)
+
+```
+
+```{r}
+# write table ----
+#setwd("C:/Users/Finley/Desktop/research/healthcare/task 7 trial/")
+
+#write.csv(df_vaccine_hesitancy,file = "result/tables/vaccine hesitancy.csv")
+#write.csv(df_covid19_vaccine_hesitancy,file = "result/tables/covid19 vaccine hesitancy.csv")
+```
+
+
+
+## list experiment
+
+###Weighted outcome
+
+Using the data in the list experiment
+
+Maybe you need to do the double-check with the list experiment analysis approaches in the related literature.
+
+```{r}
+df_list_baseline = df_video_intervention[df_video_intervention$PartVQ == 2, ]
+df_list_treatment = df_video_intervention[df_video_intervention$PartVQ == 1, ]
+
+# baseline
+result1 <- df_list_baseline %>%
+  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(mean = wtd.mean(.,weight), sd = sqrt(wtd.var(.,weight))/sqrt(length(.))))
+result1
+
+# treatment
+result2 <- df_list_treatment %>%
+  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(mean = wtd.mean(.,weight), sd = sqrt(wtd.var(.,weight))/sqrt(length(.))))
+result2
+
+# difference in means
+bs = sum(df_list_baseline$weight)
+ts = sum(df_list_treatment$weight)
+cbind(((bs*result2-ts*result1)/(bs+ts))[1:4],sqrt((bs*result1^2 + ts*result2^2)/(bs+ts))[5:8])
+```
+
+### Common outcome
+
+```{r}
+df_list_baseline %>% 
+  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(counts(.)))
+
+df_list_treatment %>% 
+  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(counts(.)))
+
+# baseline
+df_control_baseline = subset(df_list_baseline,QQ == 4,select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+df_intervention_baseline = subset(df_list_baseline,QQ != 4, select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+
+wtd.t.test(df_control_baseline$PartVA_5_T,df_intervention_baseline$PartVA_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+wtd.t.test(df_control_baseline$PartVB_5_T,df_intervention_baseline$PartVB_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+wtd.t.test(df_control_baseline$PartVC_5_T,df_intervention_baseline$PartVC_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+wtd.t.test(df_control_baseline$PartVD_5_T,df_intervention_baseline$PartVD_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+
+# intervention
+df_control_treatment = subset(df_list_treatment,QQ == 4,select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+df_intervention_treatment = subset(df_list_treatment,QQ != 4, select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+
+wtd.t.test(df_control_treatment$PartVA_5_T,df_intervention_treatment$PartVA_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+wtd.t.test(df_control_treatment$PartVB_5_T,df_intervention_treatment$PartVB_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+wtd.t.test(df_control_treatment$PartVC_5_T,df_intervention_treatment$PartVC_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+wtd.t.test(df_control_treatment$PartVD_5_T,df_intervention_treatment$PartVD_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+```
+
+```{r}
+# between age
+
+sum_of_weight = sum(df_video_intervention$weight)
+
+df_vaccine_hesitancy_age = subset(df_video_intervention,select=c(age,vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+
+fit_vaccine_age=aov(vaccine_hesitancy_score*weight/sum_of_weight ~ factor(age), data=df_vaccine_hesitancy_age)
+
+summary(fit_vaccine_age)
+
+fit_covid19_vaccine_age=aov(covid19_vaccine_hesitancy_score*weight/sum_of_weight ~ factor(age), data=df_vaccine_hesitancy_age)
+
+summary(fit_covid19_vaccine_age)
+
+# Gender
+
+df_vaccine_hesitancy_male = subset(df_video_intervention,gender ==1,select=c(vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+df_vaccine_hesitancy_female = subset(df_video_intervention,gender ==2,select=c(vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+wtd.t.test(df_vaccine_hesitancy_male$vaccine_hesitancy_score,df_vaccine_hesitancy_female$vaccine_hesitancy_score,df_vaccine_hesitancy_male$weight,df_vaccine_hesitancy_female$weight)
+wtd.t.test(df_vaccine_hesitancy_male$covid19_vaccine_hesitancy_score,df_vaccine_hesitancy_female$covid19_vaccine_hesitancy_score,df_vaccine_hesitancy_male$weight,df_vaccine_hesitancy_female$weight)
+
+# Residence
+
+df_vaccine_hesitancy_rural = subset(df_video_intervention,residence ==1,select=c(vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+df_vaccine_hesitancy_urban = subset(df_video_intervention,residence ==2,select=c(vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+wtd.t.test(df_vaccine_hesitancy_rural$vaccine_hesitancy_score,df_vaccine_hesitancy_urban$vaccine_hesitancy_score,df_vaccine_hesitancy_rural$weight,df_vaccine_hesitancy_urban$weight)
+wtd.t.test(df_vaccine_hesitancy_rural$covid19_vaccine_hesitancy_score,df_vaccine_hesitancy_urban$covid19_vaccine_hesitancy_score,df_vaccine_hesitancy_rural$weight,df_vaccine_hesitancy_urban$weight)
+
+# Education
+
+df_vaccine_hesitancy_education = subset(df_video_intervention,select=c(education,vaccine_hesitancy_score,covid19_vaccine_hesitancy_score,weight))
+
+fit_vaccine_education=aov(vaccine_hesitancy_score*weight/sum_of_weight ~ factor(education), data=df_vaccine_hesitancy_education)
+
+summary(fit_vaccine_education)
+
+fit_covid19_vaccine_education=aov(covid19_vaccine_hesitancy_score*weight/sum_of_weight ~ factor(education), data=df_vaccine_hesitancy_education)
+
+summary(fit_covid19_vaccine_education)
+```
+
+## Visualization of the vaccine hesitancy
+
+Mean score and 95% CI of each treatment group.
+
+```{r}
+# Visualization
+
+library(ggplot2)
+library(ggpubr)
+my_comparisons = list(c("3","4"),c("2","4"),c("1","4"))
+
+ggplot(data = df_video_intervention, mapping = aes(x = QQ,y=wtd.mean(vaccine_hesitancy_score,weight),ymin=wtd.mean(vaccine_hesitancy_score,weight)-sqrt(wtd.var(vaccine_hesitancy_score,weight))*1.96,ymax=wtd.mean(vaccine_hesitancy_score,weight)+sqrt(wtd.var(vaccine_hesitancy_score,weight))*1.96,color=QQ)) + 
+  geom_point(size=3) + 
+  geom_errorbar(size=1,width=0.2) +
+  stat_compare_means(comparisons=my_comparisons) +
+  labs(x = "Intercention Group", y = "vaccine_hesitancy_score", title = "") +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + 
+  theme_bw()
+
+```
+
+## Regression and maps
+
+Model 1: Vaccine hesitancy \~ treatment + province
+
+Visualization: Draw the coefficient of province on the China map.
+
+Model 2: Vaccine hesitancy \~ treatment + province + treatment \* province
+
+Visualization: Draw the coefficient of treatment \* province on the China map.
+
+```{r}
+wtd_lm=lm(vaccine_hesitancy_score ~ province,data=df_video_intervention,weights=weight)
+summary(wtd_lm)
+```
+
+```{r}
+# maps
+
+library(maptools)
+library(ggplot2)
+library(rgdal)
+
+map_list = data.frame(NAME=c('河北省','山西省','辽宁省','吉林省','黑龙江省','江苏省','浙江省','安徽省','福建省','江西省','山东省','河南省','湖北省','湖南省','广东省','海南省','四川省','贵州省','云南省','陕西省','甘肃省','青海省','内蒙古自治区','广西壮族自治区','西藏自治区','宁夏回族自治区','新疆维吾尔自治区','北京市','上海市','天津市','重庆市'),resultA=seq(1,31),resultB=seq(1,31),resultC=seq(1,31),resultD=seq(1,31))
+
+for (i in 1:31){
+  map_baseline = subset(df_list_baseline,Q5==i,select=c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+  map_treatment = subset(df_list_treatment,Q5==i,select=c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+  result_baseline = c(wtd.mean(map_baseline$PartVA_5_T,map_baseline$weight),wtd.mean(map_baseline$PartVB_5_T,map_baseline$weight),wtd.mean(map_baseline$PartVC_5_T,map_baseline$weight),wtd.mean(map_baseline$PartVD_5_T,map_baseline$weight)) 
+  result_treatment = c(wtd.mean(map_treatment$PartVA_5_T,map_treatment$weight),wtd.mean(map_treatment$PartVB_5_T,map_treatment$weight),wtd.mean(map_treatment$PartVC_5_T,map_treatment$weight),wtd.mean(map_treatment$PartVD_5_T,map_treatment$weight)) 
+  bs = sum(map_baseline$weight)
+  ts = sum(map_treatment$weight)
+  result = (ts*result_treatment-bs*result_baseline)/(bs+ts)
+  map_list$resultA[i] = result[1]
+  map_list$resultB[i] = result[2]
+  map_list$resultC[i] = result[3]
+  map_list$resultD[i] = result[4]
+}
+
+gpclibPermit()
+
+mydat = rgdal::readOGR('bou2_4p.shp')
+mysh = fortify(mydat)
+mysh = transform(mysh, id = iconv(id, from = 'GBK'), group = iconv(group, from = 'GBK'))
+names(mysh)[2:3] = c("x","y")
+
+myepidat = subset(mysh,select = c('id','NAME'))
+myepidat = filter(myepidat,!duplicated(myepidat$id))
+myepidat$rand = 0
+
+for (i in 1:31){
+  myepidat$rand[which(myepidat$NAME == map_list$NAME[i])] = map_list$resultA[i]+map_list$resultB[i]+map_list$resultC[i]+map_list$resultD[i]
+}
+
+csmap = ggplot(myepidat) +
+    geom_map(aes(map_id = id, fill = rand), color = "white", map = mysh) +
+    scale_fill_gradient2(high = "red",mid = "white",low = "#9999FF") +
+    expand_limits(mysh) + coord_map()
+print(csmap)
+
+```
+
+## Fixed Effect
+
+```{r}
+# urban vs. rural
+library(nlme)
+lme_residence=lme(vaccine_hesitancy_score ~ 1, random = ~1 | residence, data=df_video_intervention)
+summary(lme_residence)
+
+# education
+lme_education=lme(vaccine_hesitancy_score ~ 1, random = ~1 | education, data=df_video_intervention)
+summary(lme_education)
+
+# province
+lme_province=lme(vaccine_hesitancy_score ~ 1, random = ~1 | province, data=df_video_intervention)
+summary(lme_province)
+
+
+## linear regression
+
+# age (random:province)
+lme_age_pro=lme(vaccine_hesitancy_score ~ Q3A, random = ~1 | province, data=df_video_intervention)
+summary(lme_age_pro)
+
+# education (random:province)
+lme_edu_pro=lme(vaccine_hesitancy_score ~ Q8, random = ~1 | province, data=df_video_intervention)
+summary(lme_edu_pro)
+
+# age + education (random:province)
+lme_age_edu_pro=lme(vaccine_hesitancy_score ~ Q3A+Q8, random = ~1 | province, data=df_video_intervention)
+summary(lme_age_edu_pro)
+```

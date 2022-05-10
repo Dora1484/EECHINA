@@ -1,0 +1,53 @@
+# A tibble: 2 x 2
+  vaccination_status `weighted.mean(hope, weight)`
+               <dbl>                         <dbl>
+1                  0                          5.53
+2                  1                          5.82
+# A tib
+Causal Mediation Analysis 
+
+Nonparametric Bootstrap Confidence Intervals with the Percentile Method
+
+                         Estimate 95% CI Lower 95% CI Upper p-value    
+ACME (control)            0.02690      0.02244         0.03  <2e-16 ***
+ACME (treated)            0.02608      0.02188         0.03  <2e-16 ***
+ADE (control)             0.02261      0.01048         0.03  <2e-16 ***
+ADE (treated)             0.02180      0.00996         0.03  <2e-16 ***
+Total Effect              0.04869      0.03494         0.06  <2e-16 ***
+Prop. Mediated (control)  0.55233      0.44737         0.73  <2e-16 ***
+Prop. Mediated (treated)  0.53561      0.43170         0.71  <2e-16 ***
+ACME (average)            0.02649      0.02216         0.03  <2e-16 ***
+ADE (average)             0.02221      0.01022         0.03  <2e-16 ***
+Prop. Mediated (average)  0.54397      0.43984         0.72  <2e-16 ***
+---
+Signif. codes:  0 ¡®***¡¯ 0.001 ¡®**¡¯ 0.01 ¡®*¡¯ 0.05 ¡®.¡¯ 0.1 ¡® ¡¯ 1
+
+Sample Size Used: 12000 
+
+
+Simulations: 1000 
+
+
+Causal Mediation Analysis 
+
+Nonparametric Bootstrap Confidence Intervals with the Percentile Method
+
+                         Estimate 95% CI Lower 95% CI Upper p-value    
+ACME (control)            0.02690      0.02244         0.03  <2e-16 ***
+ACME (treated)            0.02608      0.02188         0.03  <2e-16 ***
+ADE (control)             0.02261      0.01048         0.03  <2e-16 ***
+ADE (treated)             0.02180      0.00996         0.03  <2e-16 ***
+Total Effect              0.04869      0.03494         0.06  <2e-16 ***
+Prop. Mediated (control)  0.55233      0.44737         0.73  <2e-16 ***
+Prop. Mediated (treated)  0.53561      0.43170         0.71  <2e-16 ***
+ACME (average)            0.02649      0.02216         0.03  <2e-16 ***
+ADE (average)             0.02221      0.01022         0.03  <2e-16 ***
+Prop. Mediated (average)  0.54397      0.43984         0.72  <2e-16 ***
+---
+Signif. codes:  0 ¡®***¡¯ 0.001 ¡®**¡¯ 0.01 ¡®*¡¯ 0.05 ¡®.¡¯ 0.1 ¡® ¡¯ 1
+
+Sample Size Used: 12000 
+
+
+Simulations: 1000 
+

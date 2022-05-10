@@ -1,0 +1,5 @@
+"0","sink(""mediation regression.txt"")"
+"0","hope_tibble<-df_video_intervention %>% "
+"0","#  group_by(vaccination_status) %>%"
+"0","  summarise(mean(hope)) "
+"0","hope_tibble"

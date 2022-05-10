@@ -1,0 +1,208 @@
+"0","# setup"
+"0","set.seed(123)"
+"0","library(tidyverse) # pipeline operation "
+"2","Registered S3 methods overwritten by 'dbplyr':
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      
+"
+"2","[30m-- [1mAttaching packages[22m -------------------------------------------------------------------------- tidyverse 1.3.1 --[39m
+"
+"2","[30m[32m鈭?[30m [34mggplot2[30m 3.3.5     [32m鈭?[30m [34mpurrr  [30m 0.3.4
+[32m鈭?[30m [34mtibble [30m 3.1.6     [32m鈭?[30m [34mdplyr  [30m 1.0.8
+[32m鈭?[30m [34mtidyr  [30m 1.2.0     [32m鈭?[30m [34mstringr[30m 1.4.0
+[32m鈭?[30m [34mreadr  [30m 2.1.2     [32m鈭?[30m [34mforcats[30m 0.5.1[39m
+"
+"2","[30m-- [1mConflicts[22m ----------------------------------------------------------------------------- tidyverse_conflicts() --
+[31mx[30m [34mdplyr[30m::[32mfilter()[30m masks [34mstats[30m::filter()
+[31mx[30m [34mdplyr[30m::[32mlag()[30m    masks [34mstats[30m::lag()[39m
+"
+"0","library(haven) "
+"0","library(ggplot2) # "
+"0","library(weights) # weighted result"
+"2","载入需要的程辑包：Hmisc
+"
+"2","载入需要的程辑包：lattice
+"
+"2","载入需要的程辑包：survival
+"
+"2","载入需要的程辑包：Formula
+"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"2","
+载入程辑包：‘Hmisc’
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    src, summarize
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    format.pval, units
+
+"
+"0","library(srvyr) # deal with survey data"
+"2","
+载入程辑包：‘srvyr’
+
+"
+"2","The following object is masked from ‘package:Hmisc’:
+
+    summarize
+
+"
+"2","The following object is masked from ‘package:stats’:
+
+    filter
+
+"
+"0","library(fastR2) "
+"2","载入需要的程辑包：mosaic
+"
+"2","Registered S3 method overwritten by 'mosaic':
+  method                           from   
+  fortify.SpatialPolygonsDataFrame ggplot2
+"
+"2","
+The 'mosaic' package masks several functions from core packages in order to add 
+additional features.  The original behavior of these functions should not be affected by this.
+"
+"2","
+载入程辑包：‘mosaic’
+
+"
+"2","The following object is masked from ‘package:Matrix’:
+
+    mean
+
+"
+"2","The following objects are masked from ‘package:dplyr’:
+
+    count, do, tally
+
+"
+"2","The following object is masked from ‘package:purrr’:
+
+    cross
+
+"
+"2","The following object is masked from ‘package:ggplot2’:
+
+    stat
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    binom.test, cor, cor.test, cov, fivenum, IQR, median, prop.test, quantile, sd, t.test, var
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    max, mean, min, prod, range, sample, sum
+
+"
+"0","library(readxl)"
+"0","library(lavaan)"
+"2","This is lavaan 0.6-10
+lavaan is FREE software! Please report any bugs.
+"
+"2","
+载入程辑包：‘lavaan’
+
+"
+"2","The following object is masked from ‘package:mosaic’:
+
+    inspect
+
+"
+"0","library(psych)"
+"2","
+载入程辑包：‘psych’
+
+"
+"2","The following object is masked from ‘package:lavaan’:
+
+    cor2cov
+
+"
+"2","The following objects are masked from ‘package:mosaic’:
+
+    logit, rescale
+
+"
+"2","The following object is masked from ‘package:Hmisc’:
+
+    describe
+
+"
+"2","The following objects are masked from ‘package:ggplot2’:
+
+    %+%, alpha
+
+"
+"0","library(MBESS)"
+"2","
+载入程辑包：‘MBESS’
+
+"
+"2","The following object is masked from ‘package:psych’:
+
+    cor2cov
+
+"
+"2","The following object is masked from ‘package:lavaan’:
+
+    cor2cov
+
+"
+"0","library(mediation)"
+"2","载入需要的程辑包：MASS
+"
+"2","
+载入程辑包：‘MASS’
+
+"
+"2","The following object is masked from ‘package:fastR2’:
+
+    Traffic
+
+"
+"2","The following object is masked from ‘package:srvyr’:
+
+    select
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    select
+
+"
+"2","载入需要的程辑包：mvtnorm
+"
+"2","载入需要的程辑包：sandwich
+"
+"2","mediation: Causal Mediation Analysis
+Version: 4.5.0
+
+"
+"2","
+载入程辑包：‘mediation’
+
+"
+"2","The following object is masked from ‘package:psych’:
+
+    mediate
+
+"
+"0","library(here) # get current path"
+"2","here() starts at C:/Users/91481/Desktop/EE-video
+"
