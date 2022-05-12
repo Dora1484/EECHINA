@@ -20,6 +20,8 @@ library(psych)
 library(MBESS)
 library(mediation)
 library(here) # get current path
+library(gtsummary)
+library(reshape)
 ```
 
 ```{r load dataset}
@@ -171,7 +173,8 @@ for (i in 1:12000){
 }
 ```
 
-##Vaccine hesitancy (group by study arms)
+##Vaccine hesitancy
+###Vaccine hesitancy (group by study arms)
 
 ```{r differences between the 4 study arms}
 library(gtsummary)
@@ -192,147 +195,6 @@ df_video_intervention %>%
   ) %>%
   add_p()  
 ```
-
-##Hope score(score, upper&lower value[each block])
-
-```{r}
-library(gtsummary)
-df_video_intervention %>%
-  mutate(
-    income_level = case_when(
-      as.numeric(income) <= 4 ~ 1,
-      as.numeric(income) > 4 ~ 2),
-    education_level = case_when(
-      as.numeric(education) <= 3 ~ 1,
-      as.numeric(education) > 3 ~ 2,
-    )
-  ) %>%
-  select(income_level, education_level, residence, hope, vaccination_status) %>%
-  summarise(
-    hope_rural_yes = mean(hope[residence == 1 & vaccination_status == 1]),
-    hope_rural_yes_n = sum(residence == 1 & vaccination_status == 1),
-    hope_rural_yes_upp = mean(hope[residence == 1 & vaccination_status == 1]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
-    hope_rural_yes_low = mean(hope[residence == 1 & vaccination_status == 1]) - 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
-    
-    hope_rural_no = mean(hope[residence == 1 & vaccination_status == 0]),
-    hope_rural_no_n = sum(residence == 1 & vaccination_status == 0),
-    hope_rural_no_upp = mean(hope[residence == 1 & vaccination_status == 0]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 0])/sqrt(hope_rural_no_n),
-    hope_rural_no_low = mean(hope[residence == 1 & vaccination_status == 0]) - 1.96 * sd(hope[residence == 1 & vaccination_status == 0])/sqrt(hope_rural_no_n),
-    
-    hope_poor_yes = mean(hope[income_level == 1 & vaccination_status == 1]),
-    hope_poor_yes_n = sum(income_level == 1 & vaccination_status == 1),
-    hope_poor_yes_upp = mean(hope[income_level == 1 & vaccination_status == 1]) + 1.96 * sd(hope[income_level == 1 & vaccination_status == 1])/sqrt(hope_poor_yes_n),
-    hope_poor_yes_low = mean(hope[income_level == 1 & vaccination_status == 1]) - 1.96 * sd(hope[income_level == 1 & vaccination_status == 1])/sqrt(hope_poor_yes_n),
-    
-    hope_poor_no = mean(hope[income_level == 1 & vaccination_status == 0]),
-    hope_poor_no_n = sum(income_level == 1 & vaccination_status == 0),
-    hope_poor_no_upp = hope_poor_no + 1.96 * sd(hope[income_level == 1 & vaccination_status == 0])/sqrt(hope_rural_yes_n),
-    hope_poor_no_low = hope_poor_no - 1.96 * sd(hope[income_level == 1 & vaccination_status == 0])/sqrt(hope_rural_yes_n),
-    
-    hope_lowedu_yes = mean(hope[education_level == 1 & vaccination_status == 1]),
-    hope_lowedu_yes_n = sum(education_level == 1 & vaccination_status == 1),
-    hope_lowedu_yes_upp = hope_lowedu_yes + 1.96 * sd(hope[education_level == 1 & vaccination_status == 1])/sqrt(hope_lowedu_yes_n),
-    hope_lowedu_yes_low = hope_lowedu_yes - 1.96 * sd(hope[education_level == 1 & vaccination_status == 1])/sqrt(hope_lowedu_yes_n),
-    
-    hope_lowedu_no = mean(hope[education_level == 1 & vaccination_status == 0]),
-    hope_lowedu_no_n = sum(education_level == 1 & vaccination_status == 0),
-    hope_lowedu_no_upp = hope_lowedu_no + 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
-    hope_lowedu_no_low = hope_lowedu_no - 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
-  )
-```
-
-##Mediation analysis
-
-```{r mediation analysis}
-sink("mediation regression.txt")
-hope_tibble<-df_video_intervention %>% 
-#  group_by(vaccination_status) %>%
-  summarise(mean(hope)) 
-hope_tibble
-confidence_tibble<-df_video_intervention %>%
-#  group_by(vaccination_status) %>%
-  summarise(mean(vaccine_confidence))
-confidence_tibble
-
-summary(glm(data = df_video_intervention, vaccination_status ~ hope, family = binomial())) 
-summary(lm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, famil = binomial()))
-
-sink()
-
-mod1 <- "# a path
-         vaccine_confidence ~ a * hope
-
-         # b path
-         vaccination_status ~ b * vaccine_confidence
-
-         # c prime path 
-         vaccination_status ~ cp * hope
-
-         # indirect and total effects
-         ab := a * b
-         total := cp + ab"
-
-fsem1 <- sem(mod1, data = df_video_intervention, se = "bootstrap", bootstrap = 10000) # fit structural equation models
-
-sink("fsem.txt")
-summary(fsem1)
-sink()
-
-model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope + age + gender 
-             + residence + education + occupation + income)
-model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence + age + gender + residence + education + occupation + income, family = "binomial")
-sem <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
-
-sink("sem.txt")
-summary(sem)
-plot(sem)
-sink()
-
-model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope)
-model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, family = "binomial")
-sem0 <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
-
-summary(sem0)
-plot(sem0)
-
-
-# semb<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male + urban  + college + poor + provider, data = comdem[black == 1,], n.iter = 10000)
-# sink("fsem_blk.txt")
-# summary(semb)
-# 
-# sink()
-# 
-# 
-# semu<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + college + poor + provider, data = comdem[urban == 1,], n.iter = 10000)
-# sink("fsem_urban.txt")
-# 
-# summary(semu)
-# sink()
-# 
-# semu<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + college + poor + provider, data = comdem[urban == 0,], n.iter = 10000)
-# semc<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + urban + poor + provider, data = comdem[college == 0,], n.iter = 10000)
-# semp<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + urban + college + provider, data = comdem[poor == 1,], n.iter = 10000)
-# 
-# sink("fsem_ucp.txt")
-# 
-# summary(semu)
-# summary(semc)
-# summary(semp)
-# sink()
-# 
-# semm<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male + urban + black + college + poor + provider, data = comdem, n.iter = 10000)
-
-```
-
-```{r}
-# write table ----
-#setwd("C:/Users/Finley/Desktop/research/healthcare/task 7 trial/")
-
-#write.csv(df_vaccine_hesitancy,file = "result/tables/vaccine hesitancy.csv")
-#write.csv(df_covid19_vaccine_hesitancy,file = "result/tables/covid19 vaccine hesitancy.csv")
-```
-
-##Vaccine hesitancy
 
 ###Common vaccine hesitancy
 
@@ -476,6 +338,148 @@ summary(fit_covid19_vaccine)
 
 ```
 
+
+##Hope score(score, upper&lower value[each block])
+
+```{r}
+library(gtsummary)
+df_video_intervention %>%
+  mutate(
+    income_level = case_when(
+      as.numeric(income) <= 4 ~ 1,
+      as.numeric(income) > 4 ~ 2),
+    education_level = case_when(
+      as.numeric(education) <= 3 ~ 1,
+      as.numeric(education) > 3 ~ 2,
+    )
+  ) %>%
+  select(income_level, education_level, residence, hope, vaccination_status) %>%
+  summarise(
+    hope_rural_yes = mean(hope[residence == 1 & vaccination_status == 1]),
+    hope_rural_yes_n = sum(residence == 1 & vaccination_status == 1),
+    hope_rural_yes_upp = mean(hope[residence == 1 & vaccination_status == 1]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
+    hope_rural_yes_low = mean(hope[residence == 1 & vaccination_status == 1]) - 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
+    
+    hope_rural_no = mean(hope[residence == 1 & vaccination_status == 0]),
+    hope_rural_no_n = sum(residence == 1 & vaccination_status == 0),
+    hope_rural_no_upp = mean(hope[residence == 1 & vaccination_status == 0]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 0])/sqrt(hope_rural_no_n),
+    hope_rural_no_low = mean(hope[residence == 1 & vaccination_status == 0]) - 1.96 * sd(hope[residence == 1 & vaccination_status == 0])/sqrt(hope_rural_no_n),
+    
+    hope_poor_yes = mean(hope[income_level == 1 & vaccination_status == 1]),
+    hope_poor_yes_n = sum(income_level == 1 & vaccination_status == 1),
+    hope_poor_yes_upp = mean(hope[income_level == 1 & vaccination_status == 1]) + 1.96 * sd(hope[income_level == 1 & vaccination_status == 1])/sqrt(hope_poor_yes_n),
+    hope_poor_yes_low = mean(hope[income_level == 1 & vaccination_status == 1]) - 1.96 * sd(hope[income_level == 1 & vaccination_status == 1])/sqrt(hope_poor_yes_n),
+    
+    hope_poor_no = mean(hope[income_level == 1 & vaccination_status == 0]),
+    hope_poor_no_n = sum(income_level == 1 & vaccination_status == 0),
+    hope_poor_no_upp = hope_poor_no + 1.96 * sd(hope[income_level == 1 & vaccination_status == 0])/sqrt(hope_rural_yes_n),
+    hope_poor_no_low = hope_poor_no - 1.96 * sd(hope[income_level == 1 & vaccination_status == 0])/sqrt(hope_rural_yes_n),
+    
+    hope_lowedu_yes = mean(hope[education_level == 1 & vaccination_status == 1]),
+    hope_lowedu_yes_n = sum(education_level == 1 & vaccination_status == 1),
+    hope_lowedu_yes_upp = hope_lowedu_yes + 1.96 * sd(hope[education_level == 1 & vaccination_status == 1])/sqrt(hope_lowedu_yes_n),
+    hope_lowedu_yes_low = hope_lowedu_yes - 1.96 * sd(hope[education_level == 1 & vaccination_status == 1])/sqrt(hope_lowedu_yes_n),
+    
+    hope_lowedu_no = mean(hope[education_level == 1 & vaccination_status == 0]),
+    hope_lowedu_no_n = sum(education_level == 1 & vaccination_status == 0),
+    hope_lowedu_no_upp = hope_lowedu_no + 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
+    hope_lowedu_no_low = hope_lowedu_no - 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
+  )
+```
+
+##Mediation analysis
+
+```{r mediation analysis}
+sink("mediation regression.txt")
+hope_tibble<-df_video_intervention %>% 
+#  group_by(vaccination_status) %>%
+  summarise(mean(hope)) 
+hope_tibble
+confidence_tibble<-df_video_intervention %>%
+#  group_by(vaccination_status) %>%
+  summarise(mean(vaccine_confidence))
+confidence_tibble
+
+summary(glm(data = df_video_intervention, vaccination_status ~ hope, family = binomial())) 
+summary(lm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, famil = binomial()))
+
+sink()
+
+mod1 <- "# a path
+         vaccine_confidence ~ a * hope
+
+         # b path
+         vaccination_status ~ b * vaccine_confidence
+
+         # c prime path 
+         vaccination_status ~ cp * hope
+
+         # indirect and total effects
+         ab := a * b
+         total := cp + ab"
+
+fsem1 <- sem(mod1, data = df_video_intervention, se = "bootstrap", bootstrap = 10000) # fit structural equation models
+
+sink("fsem.txt")
+summary(fsem1)
+sink()
+
+model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope + age + gender 
+             + residence + education + occupation + income)
+model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence + age + gender + residence + education + occupation + income, family = "binomial")
+sem <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
+
+sink("sem.txt")
+summary(sem)
+plot(sem)
+sink()
+
+model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope)
+model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, family = "binomial")
+sem0 <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
+
+summary(sem0)
+plot(sem0)
+
+
+# semb<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male + urban  + college + poor + provider, data = comdem[black == 1,], n.iter = 10000)
+# sink("fsem_blk.txt")
+# summary(semb)
+# 
+# sink()
+# 
+# 
+# semu<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + college + poor + provider, data = comdem[urban == 1,], n.iter = 10000)
+# sink("fsem_urban.txt")
+# 
+# summary(semu)
+# sink()
+# 
+# semu<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + college + poor + provider, data = comdem[urban == 0,], n.iter = 10000)
+# semc<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + urban + poor + provider, data = comdem[college == 0,], n.iter = 10000)
+# semp<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male  + black + urban + college + provider, data = comdem[poor == 1,], n.iter = 10000)
+# 
+# sink("fsem_ucp.txt")
+# 
+# summary(semu)
+# summary(semc)
+# summary(semp)
+# sink()
+# 
+# semm<-mediate(vaccination_status ~ hope +  (vaccine_hesitancy), z = age + male + urban + black + college + poor + provider, data = comdem, n.iter = 10000)
+
+```
+
+```{r}
+# write table ----
+#setwd("C:/Users/Finley/Desktop/research/healthcare/task 7 trial/")
+
+#write.csv(df_vaccine_hesitancy,file = "result/tables/vaccine hesitancy.csv")
+#write.csv(df_covid19_vaccine_hesitancy,file = "result/tables/covid19 vaccine hesitancy.csv")
+```
+
+
+
 ## list experiment
 
 ###Weighted outcome
@@ -489,19 +493,41 @@ df_list_baseline = df_video_intervention[df_video_intervention$PartVQ == 2, ]
 df_list_treatment = df_video_intervention[df_video_intervention$PartVQ == 1, ]
 
 # baseline
+#result1<- df_list_baseline %>%
+  #summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(mean = wtd.mean(.,weight), sd = sqrt(wtd.var(.,weight))/sqrt(length(.))))
 result1 <- df_list_baseline %>%
-  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(mean = wtd.mean(.,weight), sd = sqrt(wtd.var(.,weight))/sqrt(length(.))))
-result1
+  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T),
+               funs(mean(.)))
+result1 %>%
+  mutate( total = PartVA_5_T+PartVB_5_T+PartVC_5_T+PartVD_5_T)
+result1 <- t(result1)
+result1 <- as.data.frame(result1)
 
 # treatment
+#result2 <- df_list_treatment %>%
+  #summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(mean = wtd.mean(.,weight), sd = sqrt(wtd.var(.,weight))/sqrt(length(.))))
+#result2
 result2 <- df_list_treatment %>%
-  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(mean = wtd.mean(.,weight), sd = sqrt(wtd.var(.,weight))/sqrt(length(.))))
-result2
+  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T),
+               funs(mean(.)))
+result2 %>%
+  mutate(total=PartVA_5_T+PartVB_5_T+PartVC_5_T+PartVD_5_T)
+result2 <- t(result2)
+result2 <- as.data.frame(result2)
+#table for list outcome
+df_list_outcome <- result1
+df_list_outcome <- df_list_outcome %>%
+  mutate(treatment = result2) %>%
+  mutate(dif = treatment - result1)
+names(df_list_outcome) <- c("baseline", "treatment", "difference")
+  
 
-# difference in means
+# difference in means£¨weighted)
 bs = sum(df_list_baseline$weight)
 ts = sum(df_list_treatment$weight)
 cbind(((bs*result2-ts*result1)/(bs+ts))[1:4],sqrt((bs*result1^2 + ts*result2^2)/(bs+ts))[5:8])
+
+# difference in means
 ```
 
 ### Common outcome
