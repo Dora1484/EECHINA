@@ -387,7 +387,7 @@ df_video_intervention %>%
   )
 ```
 
-##Mediation analysis
+###Mediation analysis
 
 ```{r mediation analysis}
 sink("mediation regression.txt")
@@ -482,7 +482,7 @@ plot(sem0)
 
 ## list experiment
 
-###Weighted outcome
+
 
 Using the data in the list experiment
 
@@ -498,10 +498,11 @@ df_list_treatment = df_video_intervention[df_video_intervention$PartVQ == 1, ]
 result1 <- df_list_baseline %>%
   summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T),
                funs(mean(.)))
-result1 %>%
-  mutate( total = PartVA_5_T+PartVB_5_T+PartVC_5_T+PartVD_5_T)
+result1 <- result1 %>%
+  dplyr::mutate( total = PartVA_5_T + PartVB_5_T + PartVC_5_T + PartVD_5_T)
 result1 <- t(result1)
 result1 <- as.data.frame(result1)
+names(result1) <- c("baseline")
 
 # treatment
 #result2 <- df_list_treatment %>%
@@ -510,53 +511,93 @@ result1 <- as.data.frame(result1)
 result2 <- df_list_treatment %>%
   summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T),
                funs(mean(.)))
-result2 %>%
+result2 <- result2 %>%
   mutate(total=PartVA_5_T+PartVB_5_T+PartVC_5_T+PartVD_5_T)
 result2 <- t(result2)
 result2 <- as.data.frame(result2)
+names(result2) <- c("treatment")
 #table for list outcome
 df_list_outcome <- result1
 df_list_outcome <- df_list_outcome %>%
-  mutate(treatment = result2) %>%
-  mutate(dif = treatment - result1)
-names(df_list_outcome) <- c("baseline", "treatment", "difference")
-  
+  mutate(result2) %>%
+  mutate(difference = treatment - baseline)
 
 # difference in means£®weighted)
 bs = sum(df_list_baseline$weight)
 ts = sum(df_list_treatment$weight)
 cbind(((bs*result2-ts*result1)/(bs+ts))[1:4],sqrt((bs*result1^2 + ts*result2^2)/(bs+ts))[5:8])
 
-# difference in means
+#t test for list experiment
+
+
 ```
 
-### Common outcome
+### referece code
 
 ```{r}
-df_list_baseline %>% 
-  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(counts(.)))
+#df_list_baseline %>% 
+ # summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(counts(.)))
 
-df_list_treatment %>% 
-  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(counts(.)))
+#df_list_treatment %>% 
+#  summarise_at(vars(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T), funs(counts(.)))
 
 # baseline
-df_control_baseline = subset(df_list_baseline,QQ == 4,select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
-df_intervention_baseline = subset(df_list_baseline,QQ != 4, select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+#df_control_baseline = subset(df_list_baseline,QQ == 4,select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+#df_intervention_baseline = subset(df_list_baseline,QQ != 4, select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
 
-wtd.t.test(df_control_baseline$PartVA_5_T,df_intervention_baseline$PartVA_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
-wtd.t.test(df_control_baseline$PartVB_5_T,df_intervention_baseline$PartVB_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
-wtd.t.test(df_control_baseline$PartVC_5_T,df_intervention_baseline$PartVC_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
-wtd.t.test(df_control_baseline$PartVD_5_T,df_intervention_baseline$PartVD_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+#wtd.t.test(df_control_baseline$PartVA_5_T,df_intervention_baseline$PartVA_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+#wtd.t.test(df_control_baseline$PartVB_5_T,df_intervention_baseline$PartVB_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+#wtd.t.test(df_control_baseline$PartVC_5_T,df_intervention_baseline$PartVC_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
+#wtd.t.test(df_control_baseline$PartVD_5_T,df_intervention_baseline$PartVD_5_T,df_control_baseline$weight,df_intervention_baseline$weight)
 
 # intervention
-df_control_treatment = subset(df_list_treatment,QQ == 4,select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
-df_intervention_treatment = subset(df_list_treatment,QQ != 4, select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+#df_control_treatment = subset(df_list_treatment,QQ == 4,select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
+#df_intervention_treatment = subset(df_list_treatment,QQ != 4, select = c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
 
-wtd.t.test(df_control_treatment$PartVA_5_T,df_intervention_treatment$PartVA_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
-wtd.t.test(df_control_treatment$PartVB_5_T,df_intervention_treatment$PartVB_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
-wtd.t.test(df_control_treatment$PartVC_5_T,df_intervention_treatment$PartVC_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
-wtd.t.test(df_control_treatment$PartVD_5_T,df_intervention_treatment$PartVD_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+#wtd.t.test(df_control_treatment$PartVA_5_T,df_intervention_treatment$PartVA_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+#wtd.t.test(df_control_treatment$PartVB_5_T,df_intervention_treatment$PartVB_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+#wtd.t.test(df_control_treatment$PartVC_5_T,df_intervention_treatment$PartVC_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
+#wtd.t.test(df_control_treatment$PartVD_5_T,df_intervention_treatment$PartVD_5_T,df_control_treatment$weight,df_intervention_treatment$weight)
 ```
+
+##Engagement
+```{r}
+#≈≈–Ú
+df_video_intervention <- df_video_intervention%>%
+  tidyr::replace_na(list(TA2_2_T=0, TB2_2_T=0, TC2_2_T=0))
+df_video_intervention <- df_video_intervention %>%
+  mutate (watching_time_1 = TA2_2_T + TB2_2_T+ TC2_2_T)
+df_watchingtime <-  df_video_intervention$watching_time_1
+s <- tibble(s = 1:12000)
+df_watchingtime <- sort(df_watchingtime)
+df_watchingtime <- as.data.frame(df_watchingtime)
+df_watchingtime <- df_watchingtime %>%
+  mutate(s)
+
+df_watchingtime_A <-  df_video_intervention$TA2_2_T
+s <- tibble(s = 1:12000)
+df_watchingtime <- sort(df_watchingtime)
+df_watchingtime <- as.data.frame(df_watchingtime)
+df_watchingtime <- df_watchingtime %>%
+  mutate(s)
+#25%£¨50%£¨75% (average time)
+df_watchingtime <- df_watchingtime %>%
+  mutate(
+    group = case_when(
+      as.numeric(s) <= 4000 ~ 1,
+      as.numeric(s) > 4000 & as.numeric(s)<= 8000 ~ 2,
+     as.numeric(s) > 8000 ~ 3 )
+  ) 
+ df_watchingtime %>%
+  group_by(group)%>%
+  summarise_at(vars(df_watchingtime),list(~mean(.)))
+
+#25%£¨50%£¨75% (percentage)
+
+```
+
+
+
 
 ```{r}
 # between age
