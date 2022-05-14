@@ -113,7 +113,7 @@ There remains the doubt whether Q11 should be put into the sample characteristic
 
 ## Primary outcomes: vaccine hesitancy, hope, vaccination status
 
-```{r, echo=FALSE}
+```{r}
 ### 1. vaccine hesitancy ---------
 #### transform the negative problem scores to the positive 
 attach(df_video_intervention)
@@ -173,8 +173,7 @@ for (i in 1:12000){
 }
 ```
 
-##Vaccine hesitancy
-###Vaccine hesitancy (group by study arms)
+##Vaccine hesitancy ###Vaccine hesitancy (group by study arms)
 
 ```{r differences between the 4 study arms}
 library(gtsummary)
@@ -338,7 +337,6 @@ summary(fit_covid19_vaccine)
 
 ```
 
-
 ##Hope score(score, upper&lower value[each block])
 
 ```{r}
@@ -478,11 +476,7 @@ plot(sem0)
 #write.csv(df_covid19_vaccine_hesitancy,file = "result/tables/covid19 vaccine hesitancy.csv")
 ```
 
-
-
 ## list experiment
-
-
 
 Using the data in the list experiment
 
@@ -522,7 +516,7 @@ df_list_outcome <- df_list_outcome %>%
   mutate(result2) %>%
   mutate(difference = treatment - baseline)
 
-# difference in means£¨weighted)
+# difference in means??weighted)
 bs = sum(df_list_baseline$weight)
 ts = sum(df_list_treatment$weight)
 cbind(((bs*result2-ts*result1)/(bs+ts))[1:4],sqrt((bs*result1^2 + ts*result2^2)/(bs+ts))[5:8])
@@ -561,8 +555,9 @@ cbind(((bs*result2-ts*result1)/(bs+ts))[1:4],sqrt((bs*result1^2 + ts*result2^2)/
 ```
 
 ##Engagement
+
 ```{r}
-#ÅÅĞò
+#
 df_video_intervention <- df_video_intervention%>%
   tidyr::replace_na(list(TA2_2_T=0, TB2_2_T=0, TC2_2_T=0))
 df_video_intervention <- df_video_intervention %>%
@@ -574,30 +569,147 @@ df_watchingtime <- as.data.frame(df_watchingtime)
 df_watchingtime <- df_watchingtime %>%
   mutate(s)
 
-df_watchingtime_A <-  df_video_intervention$TA2_2_T
 s <- tibble(s = 1:12000)
-df_watchingtime <- sort(df_watchingtime)
+df_watchingtime <- sort(df_watchingtime$df_watchingtime)
 df_watchingtime <- as.data.frame(df_watchingtime)
 df_watchingtime <- df_watchingtime %>%
   mutate(s)
-#25%£¬50%£¬75% (average time)
+#25%50%75% (average time)
 df_watchingtime <- df_watchingtime %>%
   mutate(
     group = case_when(
-      as.numeric(s) <= 4000 ~ 1,
-      as.numeric(s) > 4000 & as.numeric(s)<= 8000 ~ 2,
-     as.numeric(s) > 8000 ~ 3 )
+      as.numeric(s) <= 3000 ~ 1,
+      as.numeric(s) > 3000 & as.numeric(s)<= 6000 ~ 2, as.numeric(s) > 6000 & as.numeric(s)<= 9000 ~ 3,
+     as.numeric(s) > 9000 ~ 4 )
   ) 
- df_watchingtime %>%
+ t <- df_watchingtime %>%
   group_by(group)%>%
   summarise_at(vars(df_watchingtime),list(~mean(.)))
+#videoA
+ df_watchingtime_A <-  df_video_intervention$TA2_2_T
+ df_watchingtime_A <- as.data.frame(df_watchingtime_A)
+ df_watchingtime_A <- df_watchingtime_A %>%
+  dplyr::mutate(
+    N = dplyr::case_when(
+      as.numeric(df_watchingtime_A) <= 0 ~ 0,
+      as.numeric(df_watchingtime_A) > 0 ~ 1 )
+  ) 
+cA <- df_watchingtime_A %>%
+  summarise_at(vars(N), funs(counts))
+  df_watchingtime_A <- sort(df_watchingtime_A$df_watchingtime_A)
+   df_watchingtime_A <- as.data.frame(df_watchingtime_A)
+df_watchingtime_A <- df_watchingtime_A %>%
+  dplyr::mutate(s)
+df_watchingtime_A <- df_watchingtime_A %>%
+  mutate(
+    group = case_when(
+      as.numeric(s) <= 8072 ~ 1,
+      as.numeric(s) > 8072 & as.numeric(s)<= 9054 ~ 2, 
+      as.numeric(s) > 9054 & as.numeric(s)<= 10036 ~ 3,
+      as.numeric(s) > 10036 & as.numeric(s)<= 11018 ~ 4,
+     as.numeric(s) > 11018 ~ 5 )
+  ) 
 
-#25%£¬50%£¬75% (percentage)
+ tA <- df_watchingtime_A %>%
+  group_by(group)%>%
+  summarise_at(vars(df_watchingtime_A),list(~mean(.)))
+ 
+ #videoB
+ 
+  df_watchingtime_B <-  df_video_intervention$TB2_2_T
+ df_watchingtime_B <- as.data.frame(df_watchingtime_B)
+ df_watchingtime_B <- df_watchingtime_B %>%
+  dplyr::mutate(
+    N = dplyr::case_when(
+      as.numeric(df_watchingtime_B) <= 0 ~ 0,
+      as.numeric(df_watchingtime_B) > 0 ~ 1 )
+  ) 
+cB <- df_watchingtime_B %>%
+  summarise_at(vars(N), funs(counts))
+  df_watchingtime_B <- sort(df_watchingtime_B$df_watchingtime_B)
+   df_watchingtime_B <- as.data.frame(df_watchingtime_B)
+df_watchingtime_B <- df_watchingtime_B %>%
+  dplyr::mutate(s)
+df_watchingtime_B <- df_watchingtime_B %>%
+  mutate(
+    group = case_when(
+      as.numeric(s) <= 8451 ~ 1,
+      as.numeric(s) > 8451 & as.numeric(s)<= 9338 ~ 2, 
+      as.numeric(s) > 9338 & as.numeric(s)<= 10225 ~ 3,
+      as.numeric(s) > 10225 & as.numeric(s)<= 11112 ~ 4,
+     as.numeric(s) > 11112 ~ 5 )
+  ) 
 
+ tB <- df_watchingtime_B %>%
+  group_by(group)%>%
+  summarise_at(vars(df_watchingtime_B),list(~mean(.)))
+ #videoC
+   df_watchingtime_C <-  df_video_intervention$TC2_2_T
+ df_watchingtime_C <- as.data.frame(df_watchingtime_C)
+ df_watchingtime_C <- df_watchingtime_C %>%
+  dplyr::mutate(
+    N = dplyr::case_when(
+      as.numeric(df_watchingtime_C) <= 0 ~ 0,
+      as.numeric(df_watchingtime_C) > 0 ~ 1 )
+  ) 
+cC <- df_watchingtime_C %>%
+  summarise_at(vars(N), funs(counts))
+  df_watchingtime_C <- sort(df_watchingtime_C$df_watchingtime_C)
+   df_watchingtime_C <- as.data.frame(df_watchingtime_C)
+df_watchingtime_C <- df_watchingtime_C %>%
+  dplyr::mutate(s)
+df_watchingtime_C <- df_watchingtime_C %>%
+  mutate(
+    group = case_when(
+      as.numeric(s) <= 8485 ~ 1,
+      as.numeric(s) > 8485 & as.numeric(s)<= 9363 ~ 2, 
+      as.numeric(s) > 9363 & as.numeric(s)<= 10241 ~ 3,
+      as.numeric(s) > 10241 & as.numeric(s)<= 11119 ~ 4,
+     as.numeric(s) > 11119 ~ 5 )
+  ) 
+
+ tC <- df_watchingtime_C %>%
+  group_by(group)%>%
+  summarise_at(vars(df_watchingtime_C),list(~mean(.)))
+#yes or no page
+ 
+ df_engagement_yon <- df_video_intervention%>%
+   subset.data.frame(select = QQ1_4)
+ c_yon <- df_engagement_yon %>%
+  summarise_at(vars(QQ1_4), funs(counts))%>%
+   mutate(p = QQ1_4/12000)
+ #what is their true choice(less than 30% & more than 70%)
+ df_engagement_true <- df_video_intervention %>%
+   subset.data.frame(select = c(TA2_2_T,TB2_2_T,TC2_2_T))%>%
+   mutate(va = case_when(TA2_2_T<=23700 ~ 0,
+                         TA2_2_T> 23700 & TA2_2_T<= 55300 ~ 1,
+                         TA2_2_T>55300 ~2))%>%
+   mutate(vb = case_when(TB2_2_T<=25200 ~ 0,
+                         TB2_2_T> 25200 & TB2_2_T<= 58800 ~ 1,
+                         TB2_2_T>58800 ~2))%>%
+   mutate(vc = case_when(TC2_2_T<=54600 ~ 0,
+                         TC2_2_T> 54600 & TC2_2_T<= 12740 ~ 1,
+                         TC2_2_T>12740 ~2))
+ ##counting
+  c_ture <- df_engagement_true %>%
+  summarise_at(vars(c(va,vb)), funs(counts))%>% 
+    mutate( level = 0:2)
+  c_ture_vc <-  df_engagement_true %>%
+  summarise_at(vars(c(vc)), funs(counts))%>% 
+    mutate( level = c(0,2))
+  c_ture <- left_join(c_ture,c_ture_vc,by ="level" )
+  ##
+  df_engagement_ture_n <- df_engagement_true %>%
+     summarise(
+       va_vb_n = sum(va == 0 & vb == 2),
+     va_vc_n = sum(va == 0 & vc == 2),
+     vb_va_n = sum(vb == 0 & va == 2),
+     vb_vc_n = sum(vb == 0 & vc == 2),
+     vc_va_n = sum(vc == 0 & va == 2),
+     vc_vb_n = sum(vc == 0 & vb == 2)
+     )
+ 
 ```
-
-
-
 
 ```{r}
 # between age
@@ -684,7 +796,7 @@ library(maptools)
 library(ggplot2)
 library(rgdal)
 
-map_list = data.frame(NAME=c('ºÓ±±Ê¡','É½Î÷Ê¡','ÁÉÄşÊ¡','¼ªÁÖÊ¡','ºÚÁú½­Ê¡','½­ËÕÊ¡','Õã½­Ê¡','°²»ÕÊ¡','¸£½¨Ê¡','½­Î÷Ê¡','É½¶«Ê¡','ºÓÄÏÊ¡','ºş±±Ê¡','ºşÄÏÊ¡','¹ã¶«Ê¡','º£ÄÏÊ¡','ËÄ´¨Ê¡','¹óÖİÊ¡','ÔÆÄÏÊ¡','ÉÂÎ÷Ê¡','¸ÊËàÊ¡','Çàº£Ê¡','ÄÚÃÉ¹Å×ÔÖÎÇø','¹ãÎ÷×³×å×ÔÖÎÇø','Î÷²Ø×ÔÖÎÇø','ÄşÏÄ»Ø×å×ÔÖÎÇø','ĞÂ½®Î¬Îá¶û×ÔÖÎÇø','±±¾©ÊĞ','ÉÏº£ÊĞ','Ìì½òÊĞ','ÖØÇìÊĞ'),resultA=seq(1,31),resultB=seq(1,31),resultC=seq(1,31),resultD=seq(1,31))
+map_list = data.frame(NAME=c('?Ó±?Ê¡','É½??Ê¡','????Ê¡','????Ê¡','??????Ê¡','????Ê¡','?ã½­Ê¡','????Ê¡','????Ê¡','????Ê¡','É½??Ê¡','????Ê¡','????Ê¡','????Ê¡','?ã¶«Ê¡','????Ê¡','?Ä´?Ê¡','????Ê¡','????Ê¡','????Ê¡','????Ê¡','?àº£Ê¡','???É¹???????','????×³????????','??????????','???Ä»?????????','?Â½?Î¬??????????','??????','?Ïº???','??????','??????'),resultA=seq(1,31),resultB=seq(1,31),resultC=seq(1,31),resultD=seq(1,31))
 
 for (i in 1:31){
   map_baseline = subset(df_list_baseline,Q5==i,select=c(PartVA_5_T, PartVB_5_T, PartVC_5_T, PartVD_5_T,weight))
