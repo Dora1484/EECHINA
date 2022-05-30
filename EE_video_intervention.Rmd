@@ -22,6 +22,7 @@ library(mediation)
 library(here) # get current path
 library(gtsummary)
 library(reshape)
+library(Rmisc)
 ```
 
 ```{r load dataset}
@@ -708,7 +709,23 @@ df_watchingtime_C <- df_watchingtime_C %>%
      vc_va_n = sum(vc == 0 & va == 2),
      vc_vb_n = sum(vc == 0 & vb == 2)
      )
- 
+ ##confidence interval (99%, 95%, 75%)
+  x <- df_watchingtime$df_watchingtime
+  CI(x,ci = 0.95)
+  CI(x,ci = 0.99)
+  CI(x,ci = 0.75)
+  x <- df_watchingtime_A$df_watchingtime_A
+  CI(x,ci = 0.95)
+  CI(x,ci = 0.99)
+  CI(x,ci = 0.75)
+  x <- df_watchingtime_B$df_watchingtime_B
+  CI(x,ci = 0.95)
+  CI(x,ci = 0.99)
+  CI(x,ci = 0.75)
+  x <- df_watchingtime_C$df_watchingtime_C
+  CI(x,ci = 0.95)
+  CI(x,ci = 0.99)
+  CI(x,ci = 0.75)
 ```
 
 ```{r}
