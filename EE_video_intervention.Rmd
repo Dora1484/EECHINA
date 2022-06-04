@@ -26,7 +26,7 @@ library(Rmisc)
 ```
 
 ```{r load dataset}
-df_video_intervention <- read_sav(here("Data","china_data","20210601 data video intervention.sav"))
+df_video_intervention <- haven::read_sav(here::here("Data","china_data","20210601data_video_intervention.sav"))
 
 ## variable coding ------
 ## SS: consent to participate
@@ -568,21 +568,23 @@ s <- tibble(s = 1:12000)
 df_watchingtime <- sort(df_watchingtime)
 df_watchingtime <- as.data.frame(df_watchingtime)
 df_watchingtime <- df_watchingtime %>%
-  mutate(s)
+  srvyr::mutate(s)
 
-s <- tibble(s = 1:12000)
-df_watchingtime <- sort(df_watchingtime$df_watchingtime)
-df_watchingtime <- as.data.frame(df_watchingtime)
-df_watchingtime <- df_watchingtime %>%
-  mutate(s)
+#s <- tibble(s = 1:12000)
+#df_watchingtime <- sort(df_watchingtime$df_watchingtime)
+#df_watchingtime <- as.data.frame(df_watchingtime)
+#df_watchingtime <- df_watchingtime %>%
+#  srvyr::mutate(s)
 #25%50%75% (average time)
 df_watchingtime <- df_watchingtime %>%
-  mutate(
-    group = case_when(
+  srvyr::mutate(
+    group = dplyr::case_when(
       as.numeric(s) <= 3000 ~ 1,
-      as.numeric(s) > 3000 & as.numeric(s)<= 6000 ~ 2, as.numeric(s) > 6000 & as.numeric(s)<= 9000 ~ 3,
-     as.numeric(s) > 9000 ~ 4 )
-  ) 
+      as.numeric(s) > 3000 & as.numeric(s)<= 6000 ~ 2, 
+      as.numeric(s) > 6000 & as.numeric(s)<= 9000 ~ 3,
+      as.numeric(s) > 9000 ~ 4 )
+  )
+mutate
  t <- df_watchingtime %>%
   group_by(group)%>%
   summarise_at(vars(df_watchingtime),list(~mean(.)))
@@ -713,19 +715,76 @@ df_watchingtime_C <- df_watchingtime_C %>%
   x <- df_watchingtime$df_watchingtime
   CI(x,ci = 0.95)
   CI(x,ci = 0.99)
-  CI(x,ci = 0.75)
+  CI(x,ci = 0.50)
   x <- df_watchingtime_A$df_watchingtime_A
   CI(x,ci = 0.95)
   CI(x,ci = 0.99)
-  CI(x,ci = 0.75)
+  CI(x,ci = 0.50)
   x <- df_watchingtime_B$df_watchingtime_B
   CI(x,ci = 0.95)
   CI(x,ci = 0.99)
-  CI(x,ci = 0.75)
+  CI(x,ci = 0.50)
   x <- df_watchingtime_C$df_watchingtime_C
   CI(x,ci = 0.95)
   CI(x,ci = 0.99)
-  CI(x,ci = 0.75)
+  CI(x,ci = 0.50)
+  ##Geom_violin
+  #table
+  df_watchingtime_violin <-  df_video_intervention%>% 
+select = (watching_time_1,TA2_2_T,TB2_2_T,TC2_2_T)%>%
+rename( videoA=TA2_2_T)%>%
+rename( videoB=TB2_2_T)%>%
+rename( videoC=TC2_2_T)%>%
+rename( total_time=watching_time_1)%>%    
+    pivot_longer(cols = 'Total':'videoC',
+                 names_to = "group",
+                 values_to = "watching_time")
+  
+
+  watching_sina<- df_watchingtime_violin%>%
+  ggplot(aes(x = group, y = watching_time)) +
+  geom_violin(color = "transparent", fill = "gray90") +
+  geom_jitter(width = 0.25, size = 0.85) +
+  xlab("Group") +
+  ylab("Watching time(ms)") +
+  theme_classic(base_size = 14) +
+  theme(
+    axis.text = element_text(
+      color = "black",
+      size = 12
+    ),
+    plot.margin = margin(3, 7, 3, 1.5)
+  )+
+geom_hline(aes(yintercept = 70000),
+                colour="blue",
+                linetype="dashed",
+                size=1)+
+geom_hline(aes(yintercept = 90000),
+                colour="blue",
+                linetype="dashed",
+                size=1)+
+geom_hline(aes(yintercept = 180000),
+                colour="blue",
+                linetype="dashed",
+                size=1)+
+geom_hline(aes(yintercept = 270000),
+                colour="blue",
+                linetype="dashed",
+                size=1)+
+geom_hline(aes(yintercept = 350000),
+                colour="blue",
+                linetype="dashed",
+                size=1)
+watching_sina
+
+  
+  plot1 <- ggplot(df_watchingtime,aes(df_watchingtime))+
+    theme_minimal(base_size = 9)+
+    geom_density(aes(colour = Species,fill = Species),alpha = 0.5)+
+    labs(title = "Density 密度曲线")+
+    theme(plot.title = element_text(hjust = 0.5),
+        legend.position = c(0.8,0.8))
+  plot1
 ```
 
 ```{r}
