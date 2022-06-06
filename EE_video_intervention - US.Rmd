@@ -26,7 +26,7 @@ library(Rmisc)
 ```
 
 ```{r load dataset}
-df_video_intervention <- haven::read_sav(here::here("Data","china_data","20210601data_video_intervention.sav"))
+df_video_intervention_us <- readr::read_csv(here::here("us_data","us_video.csv"))
 
 ## variable coding ------
 ## SS: consent to participate
@@ -37,18 +37,18 @@ df_video_intervention$group <- as.factor(df_video_intervention$QQ)
 ## LC: 1 - yes; 2 - no
 ## Basic infomation Q1 - Q11
 ## 
-df_video_intervention$age <- as.factor(df_video_intervention$Q3A)
-df_video_intervention$gender <- as.factor(df_video_intervention$Q4)
-df_video_intervention$province <- as.factor(df_video_intervention$Q5)
-df_video_intervention$ethnicity <- as.factor(df_video_intervention$Q6)
-df_video_intervention$residence <- as.factor(df_video_intervention$Q7)
-df_video_intervention$education <- as.factor(df_video_intervention$Q8)
-df_video_intervention$occupation <- as.factor(df_video_intervention$Q9)
-df_video_intervention$income <- as.factor(df_video_intervention$Q10)
+df_video_intervention_us$age <- as.factor(df_video_intervention_us$Q3)
+df_video_intervention_us$gender <- as.factor(df_video_intervention_us$Q4)
+df_video_intervention_us$province <- as.factor(df_video_intervention_us$Q5)
+df_video_intervention_us$ethnicity <- as.factor(df_video_intervention_us$Q6)
+df_video_intervention_us$residence <- as.factor(df_video_intervention_us$Q7)
+df_video_intervention_us$education <- as.factor(df_video_intervention_us$Q8)
+df_video_intervention_us$occupation <- as.factor(df_video_intervention_us$Q9)
+df_video_intervention_us$income <- as.factor(df_video_intervention_us$Q10)
 
 ```
 
-## Sample characteristics
+## Sample characteristics(unchange)
 
 ```{r}
 # Q1: Have you ever been diagnosed with the new coronavirus disease?
@@ -117,44 +117,44 @@ There remains the doubt whether Q11 should be put into the sample characteristic
 ```{r}
 ### 1. vaccine hesitancy ---------
 #### transform the negative problem scores to the positive 
-attach(df_video_intervention)
-df_video_intervention$vaccine_hesitancy <- ((6 - LA_1) + (6 - LA_2) + (6 - LA_3) + (6 - LA_4) + LA_5 +(6 - LA_6) + (6 - LA_7) + (6 - LA_8) + LA_9 + LA_10 + (6 - LA_11) + LA_12 + LA_13 + LA_14) / 14
-df_video_intervention$vaccine_confidence <- 6 - df_video_intervention$vaccine_hesitancy
+attach(df_video_intervention_us)
+df_video_intervention_us$vaccine_hesitancy <- ((6 - LA_1) + (6 - LA_2) + (6 - LA_3) + (6 - LA_4) + LA_5 +(6 - LA_6) + (6 - LA_7) + (6 - LA_8) + LA_9 + LA_10 + (6 - LA_11) + LA_12 + LA_13 + LA_14) / 14
+df_video_intervention_us$vaccine_confidence <- 6 - df_video_intervention_us$vaccine_hesitancy
 detach()
 
 ### 2. COVID-19 vaccine hesitancy ----
 #### transform the negative problem scores to the positive 
-attach(df_video_intervention)
-df_video_intervention$covid19_vaccine_hesitancy <- ((6 - LB_1) + (6 - LB_2) + (6 - LB_3) + (6 - LB_4) + LB_5 +(6 - LB_6) + (6 - LB_7) + (6 - LB_8) + LB_9 + LB_10 + LB_11 + LB_12) / 12
-df_video_intervention$covid19_vaccine_confidence <- 6 - df_video_intervention$covid19_vaccine_hesitancy
+attach(df_video_intervention_us)
+df_video_intervention_us$covid19_vaccine_hesitancy <- ((6 - LB_1) + (6 - LB_2) + (6 - LB_3) + (6 - LB_4) + LB_5 +(6 - LB_6) + (6 - LB_7) + (6 - LB_8) + LB_9 + LB_10 + LB_11 + LB_12) / 12
+df_video_intervention_us$covid19_vaccine_confidence <- 6 - df_video_intervention_us$covid19_vaccine_hesitancy
 detach()
 
 ### 3. vaccination status ----
-df_video_intervention$vaccination_status = ifelse(df_video_intervention$LC_2==2,0,1)
+df_video_intervention_us$vaccination_status = ifelse(df_video_intervention_us$LC_2==2,0,1)
 
 ### 4. hope scale --------
 # agency
-df_video_intervention$agency = with(df_video_intervention, (I1_2 + I1_9 + I1_10 + I1_12)/4)
+df_video_intervention_us$agency = with(df_video_intervention_us, (I1_2 + I1_9 + I1_10 + I1_12)/4)
 # pathway
-df_video_intervention$pathway = with(df_video_intervention, (I1_1 + I1_4 + I1_6 + I1_8)/4)
+df_video_intervention_us$pathway = with(df_video_intervention_us, (I1_1 + I1_4 + I1_6 + I1_8)/4)
 # hope
-df_video_intervention$hope = (df_video_intervention$agency + df_video_intervention$pathway)/2
+df_video_intervention_us$hope = (df_video_intervention_us$agency + df_video_intervention_us$pathway)/2
 
 ### some statistics of outcome -----
-df_video_intervention %>%
+df_video_intervention_us %>%
   group_by(vaccination_status) %>%
   summarise_at(vars(vaccine_hesitancy,  hope),
                list(~mean(.), ~sd(.), ~n()))
 
-df_video_intervention %>%
+df_video_intervention_us %>%
   summarise_at(vars(vaccine_hesitancy,  hope),
                list(~mean(.), ~sd(.)))
 
 
 
-summary(glm(data = df_video_intervention, vaccination_status~hope+vaccine_hesitancy, family = "binomial"))
+summary(glm(data = df_video_intervention_us, vaccination_status~hope+vaccine_hesitancy, family = "binomial"))
 
-summary(glm(data = df_video_intervention, hope~vaccine_hesitancy))
+summary(glm(data = df_video_intervention_us, hope~vaccine_hesitancy))
 
 
 ```
@@ -162,23 +162,23 @@ summary(glm(data = df_video_intervention, hope~vaccine_hesitancy))
 ## Adding Weights
 
 ```{r}
-df_weight <- read_xlsx(path = "Weights.xlsx", sheet = 1, na = "NA")
+#df_weight <- read_xlsx(path = "Weights.xlsx", sheet = 1, na = "NA")
 
-df_video_intervention$weight <- rep(0,12000)
+#df_video_intervention$weight <- rep(0,12000)
 
-for (i in 1:12000){
-  j = df_video_intervention$Q4[i] # gender
-  k = df_video_intervention$Q5[i] # province
-  l = df_video_intervention$Q7[i] # residence
-  df_video_intervention$weight[i] = as.numeric(df_weight[k,2*j+l-2]) 
-}
+#for (i in 1:12000){
+ # j = df_video_intervention$Q4[i] # gender
+ # k = df_video_intervention$Q5[i] # province
+ # l = df_video_intervention$Q7[i] # residence
+ # df_video_intervention$weight[i] = #as.numeric(df_weight[k,2*j+l-2]) 
+#}
 ```
 
 ##Vaccine hesitancy ###Vaccine hesitancy (group by study arms)
 
 ```{r differences between the 4 study arms}
 library(gtsummary)
-df_video_intervention %>%
+df_video_intervention_us %>%
   filter(vaccination_status==0) %>%
   select(vaccine_hesitancy, QQ) %>%
   tbl_summary(
@@ -187,7 +187,7 @@ df_video_intervention %>%
   ) %>%
   add_p()
 
-df_video_intervention %>%
+df_video_intervention_us %>%
   select(vaccination_status, QQ) %>%
   tbl_summary(
     statistic = all_continuous() ~ "{mean} ({sd})",
@@ -201,7 +201,7 @@ df_video_intervention %>%
 ```{r visualization}
 # grouped by intervention
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(QQ))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = vaccine_hesitancy,  fill = as.factor(QQ))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Group", labels = c("Intervention group a", "Intervention group b", "Intervention group c", "Control group")) +
@@ -210,7 +210,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score, 
 
 # grouped by age
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(age))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = vaccine_hesitancy,  fill = as.factor(age))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Age group", labels = c("18 to 29", "30 to 39", "40 to 49", "50 to 59", "60 or above")) + theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
@@ -218,7 +218,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score, 
 
 # grouped by gender
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(gender))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = vaccine_hesitancy,  fill = as.factor(gender))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Gender", labels = c("Male", "Female")) +
@@ -227,7 +227,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score, 
 
 # grouped by residence
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(residence))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = vaccine_hesitancy,  fill = as.factor(residence))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Residence", labels = c("Rural", "Urban")) +
@@ -237,7 +237,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score, 
 
 # grouped by education
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score,  fill = as.factor(education))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = vaccine_hesitancy,  fill = as.factor(education))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "Vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Education", labels = c("No primary school", "Primary school", "Middle school", "High school", "College/undergraduate", "Master's degree or above")) +
@@ -250,9 +250,26 @@ ggplot(data = df_video_intervention, mapping = aes(x = vaccine_hesitancy_score, 
 ### COVID-19 vaccine hesitancy.
 
 ```{r}
+library(gtsummary)
+df_video_intervention_us <- df_video_intervention_us %>%
+  dplyr::mutate(
+    income_level = case_when(
+      as.numeric(income) <= 4 ~ 1,
+      as.numeric(income) > 4 ~ 2),
+    education_level = case_when(
+      as.numeric(education) <= 3 ~ 1,
+      as.numeric(education) > 3 ~ 2
+    ), 
+    age_level = case_when(
+      as.numeric(age) <18 & as.numeric(age)<= 29 ~ 1,
+       as.numeric(age) <30 & as.numeric(age)<= 39 ~ 2, 
+      as.numeric(age) <40 & as.numeric(age)<= 49 ~ 3, 
+      as.numeric(age) <50 & as.numeric(age)<= 59 ~ 4, 
+      as.numeric(age) >=60 ~ 5
+  ))
 # grouped by intervention
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(QQ))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(QQ))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Group", labels = c("Intervention group a", "Intervention group b", "Intervention group c", "Control group")) +
@@ -261,7 +278,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy
 
 # grouped by age
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(age))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(age_level))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Age group", labels = c("18 to 29", "30 to 39", "40 to 49", "50 to 59", "60 or above")) + theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
@@ -269,7 +286,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy
 
 # grouped by gender
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(gender))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(gender))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Gender", labels = c("Male", "Female")) +
@@ -278,7 +295,7 @@ ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy
 
 # grouped by residence
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(residence))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(residence))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
   theme(panel.background = element_rect())+ scale_fill_discrete(name = "Residence", labels = c("Rural", "Urban")) +
@@ -288,12 +305,33 @@ ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy
 
 # grouped by education
 library(ggplot2)
-ggplot(data = df_video_intervention, mapping = aes(x = covid19_vaccine_hesitancy_score,  fill = as.factor(education))) + 
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(education))) + 
   geom_density(alpha = 0.3) + 
   labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
-  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Education", labels = c("No primary school", "Primary school", "Middle school", "High school", "College/undergraduate", "Master's degree or above")) +
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Education", labels = c("No primary school", "Primary school", "Middle school", "High school", "College/undergraduate", "Master's degree","Doctorate")) +
   theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
   theme_bw() # set background white
+
+
+
+# grouped by income
+library(ggplot2)
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(income))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "Income", labels = c("<$10000", "$10000-29999", "$30000-49999", "$50000-69999", "$70000-89999", "$90000-109999", "$110000-129999", "$130000-149999", "$150000-199999", ">$200000")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
+# grouped by ethnicity
+library(ggplot2)
+ggplot(data = df_video_intervention_us, mapping = aes(x = covid19_vaccine_hesitancy,  fill = as.factor(ethnicity))) + 
+  geom_density(alpha = 0.3) + 
+  labs(x = "COVID-19 vaccine hesitancy", y = "Density", title = "")  + 
+  theme(panel.background = element_rect())+ scale_fill_discrete(name = "ethnicity", labels = c("White", "Black or African American", "Asian or Asian American", "Mixed", "Other")) +
+  theme(panel.grid=element_blank(),axis.line=element_line(size=0.5, colour="black"),panel.grid.minor = element_blank()) + # delete the the grid but save the axis
+  theme_bw() # set background white
+
 ```
 
 ### T test of the vaccine hesitancy
