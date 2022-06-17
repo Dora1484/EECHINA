@@ -1,45 +1,45 @@
 
 Call:
 glm(formula = vaccination_status ~ hope, family = binomial(), 
-    data = df_video_intervention)
+    data = df_video_intervention_us)
 
 Deviance Residuals: 
     Min       1Q   Median       3Q      Max  
--2.1856   0.4784   0.5275   0.5671   0.8487  
+-1.9498   0.5759   0.5828   0.5899   0.6260  
 
 Coefficients:
             Estimate Std. Error z value Pr(>|z|)    
-(Intercept)  0.62784    0.13292   4.724 2.32e-06 ***
-hope         0.20805    0.02307   9.016  < 2e-16 ***
+(Intercept)  1.50038    0.12551  11.954   <2e-16 ***
+hope         0.02982    0.02128   1.401    0.161    
 ---
 Signif. codes:  0 ¡®***¡¯ 0.001 ¡®**¡¯ 0.01 ¡®*¡¯ 0.05 ¡®.¡¯ 0.1 ¡® ¡¯ 1
 
 (Dispersion parameter for binomial family taken to be 1)
 
-    Null deviance: 9686.4  on 11999  degrees of freedom
-Residual deviance: 9606.4  on 11998  degrees of freedom
-AIC: 9610.4
+    Null deviance: 10433  on 11954  degrees of freedom
+Residual deviance: 10431  on 11953  degrees of freedom
+AIC: 10435
 
-Number of Fisher Scoring iterations: 4
+Number of Fisher Scoring iterations: 3
 
 
 Call:
 lm(formula = vaccination_status ~ hope + vaccine_confidence, 
-    data = df_video_intervention, famil = binomial())
+    data = df_video_intervention_us, famil = binomial())
 
 Residuals:
-    Min      1Q  Median      3Q     Max 
--1.0552  0.0665  0.1257  0.1691  0.3864 
+     Min       1Q   Median       3Q      Max 
+-1.19967 -0.11591  0.03036  0.18339  0.82834 
 
 Coefficients:
-                   Estimate Std. Error t value Pr(>|t|)    
-(Intercept)        0.286822   0.029971   9.570  < 2e-16 ***
-hope               0.011784   0.002933   4.018  5.9e-05 ***
-vaccine_confidence 0.138070   0.008123  16.997  < 2e-16 ***
+                    Estimate Std. Error t value Pr(>|t|)    
+(Intercept)        -0.545715   0.019624 -27.808   <2e-16 ***
+hope                0.003863   0.002180   1.772   0.0764 .  
+vaccine_confidence  0.348062   0.003770  92.326   <2e-16 ***
 ---
 Signif. codes:  0 ¡®***¡¯ 0.001 ¡®**¡¯ 0.01 ¡®*¡¯ 0.05 ¡®.¡¯ 0.1 ¡® ¡¯ 1
 
-Residual standard error: 0.341 on 11997 degrees of freedom
-Multiple R-squared:  0.03019,	Adjusted R-squared:  0.03003 
-F-statistic: 186.7 on 2 and 11997 DF,  p-value: < 2.2e-16
+Residual standard error: 0.2787 on 11952 degrees of freedom
+Multiple R-squared:  0.4164,	Adjusted R-squared:  0.4163 
+F-statistic:  4264 on 2 and 11952 DF,  p-value: < 2.2e-16
 

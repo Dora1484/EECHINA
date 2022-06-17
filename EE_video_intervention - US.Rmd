@@ -131,15 +131,16 @@ detach()
 
 ### 3. vaccination status ----
 df_video_intervention_us$vaccination_status = ifelse(df_video_intervention_us$LC_2==2,0,1)
-
+df_video_intervention_us$vaccination_status3 = ifelse(df_video_intervention_us$LC_3==2,0,1)
 ### 4. hope scale --------
 # agency
 df_video_intervention_us$agency = with(df_video_intervention_us, (I1_2 + I1_9 + I1_10 + I1_12)/4)
 # pathway
 df_video_intervention_us$pathway = with(df_video_intervention_us, (I1_1 + I1_4 + I1_6 + I1_8)/4)
+df_video_intervention_us$third_hope = with(df_video_intervention_us, (I1_3 + I1_5 + I1_7 + I1_11)/4)
 # hope
 df_video_intervention_us$hope = (df_video_intervention_us$agency + df_video_intervention_us$pathway)/2
-
+df_video_intervention_us$hope3 = (df_video_intervention_us$agency + df_video_intervention_us$pathway+df_video_intervention_us$third_hope)/3
 ### some statistics of outcome -----
 df_video_intervention_us %>%
   group_by(vaccination_status) %>%
@@ -361,12 +362,12 @@ Mean score and 95% CI of each treatment group.
 # t test
 # treatment vs. control
 
-df_video_intervention_a = subset(df_video_intervention,QQ==1)
-df_video_intervention_b = subset(df_video_intervention,QQ==2)
-df_video_intervention_c = subset(df_video_intervention,QQ==3)
-df_video_intervention_control = subset(df_video_intervention,QQ==4)
+df_video_intervention_us_a = subset(df_video_intervention_us,QQ==1)
+df_video_intervention_us_b = subset(df_video_intervention_us,QQ==2)
+df_video_intervention_us_c = subset(df_video_intervention_us,QQ==3)
+df_video_intervention_us_control = subset(df_video_intervention_us,QQ==4)
 
-wtd.t.test(df_video_intervention_a$vaccine_hesitancy_score, df_video_intervention_control$vaccine_hesitancy_score,df_video_intervention_a$weight,df_video_intervention_control$weight)
+wtd.t.test(df_video_intervention_us_a$vaccine_hesitancy_score, df_video_intervention_us_control$vaccine_hesitancy_score,df_video_intervention_us_a$weight,df_video_intervention_us_control$weight)
 
 wtd.t.test(df_video_intervention_a$covid19_vaccine_hesitancy_score, df_video_intervention_control$covid19_vaccine_hesitancy_score,df_video_intervention_a$weight,df_video_intervention_control$weight)
 
@@ -399,18 +400,9 @@ summary(fit_covid19_vaccine)
 
 ```{r}
 library(gtsummary)
-df_video_intervention %>%
-  mutate(
-    income_level = case_when(
-      as.numeric(income) <= 4 ~ 1,
-      as.numeric(income) > 4 ~ 2),
-    education_level = case_when(
-      as.numeric(education) <= 3 ~ 1,
-      as.numeric(education) > 3 ~ 2,
-    )
-  ) %>%
-  select(income_level, education_level, residence, hope, vaccination_status) %>%
-  summarise(
+df_video_intervention_us %>%
+  dplyr::select(income_level, education_level, residence, hope, vaccination_status) %>%
+  dplyr::summarise(
     hope_rural_yes = mean(hope[residence == 1 & vaccination_status == 1]),
     hope_rural_yes_n = sum(residence == 1 & vaccination_status == 1),
     hope_rural_yes_upp = mean(hope[residence == 1 & vaccination_status == 1]) + 1.96 * sd(hope[residence == 1 & vaccination_status == 1])/sqrt(hope_rural_yes_n),
@@ -441,23 +433,39 @@ df_video_intervention %>%
     hope_lowedu_no_upp = hope_lowedu_no + 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
     hope_lowedu_no_low = hope_lowedu_no - 1.96 * sd(hope[education_level == 1 & vaccination_status == 0])/sqrt(hope_lowedu_no_n),
   )
+
+
+v<-df_video_intervention_us %>%
+  group_by(vaccination_status3) %>%dplyr::summarise_each(funs(mean,sd,n(), se=sd(.)/sqrt(n())), hope3)
+b<-df_video_intervention_us %>%
+  group_by(vaccination_status3,ethnicity) %>%dplyr::summarise_each(funs(mean,sd,n(), se=sd(.)/sqrt(n())), hope3)
+u<-df_video_intervention_us %>%
+  group_by(vaccination_status3,residence) %>%dplyr::summarise_each(funs(mean,sd,n(), se=sd(.)/sqrt(n())), hope3)
+c<-df_video_intervention_us %>%
+  group_by(vaccination_status3,education_level) %>%dplyr::summarise_each(funs(mean, sd, n(), se=sd(.)/sqrt(n())), hope3)
+p<-df_video_intervention_us %>%
+  group_by(vaccination_status3,income_level) %>%dplyr::summarise_each(funs(mean,sd, n(), se=sd(.)/sqrt(n())), hope3)
+a<-df_video_intervention_us %>%dplyr::summarise_each(funs(mean, sd, n(), se=sd(.)/sqrt(n())), hope3)
+dem_se<-bind_rows(a,v,b,u,c,p)
+write.csv(dem_se,"dem_se.csv")
+```
 ```
 
 ###Mediation analysis
 
 ```{r mediation analysis}
 sink("mediation regression.txt")
-hope_tibble<-df_video_intervention %>% 
+hope_tibble<-df_video_intervention_us %>% 
 #  group_by(vaccination_status) %>%
   summarise(mean(hope)) 
 hope_tibble
-confidence_tibble<-df_video_intervention %>%
+confidence_tibble<-df_video_intervention_us %>%
 #  group_by(vaccination_status) %>%
   summarise(mean(vaccine_confidence))
 confidence_tibble
 
-summary(glm(data = df_video_intervention, vaccination_status ~ hope, family = binomial())) 
-summary(lm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, famil = binomial()))
+summary(glm(data = df_video_intervention_us, vaccination_status ~ hope, family = binomial())) 
+summary(lm(data = df_video_intervention_us, vaccination_status ~ hope + vaccine_confidence, famil = binomial()))
 
 sink()
 
@@ -474,24 +482,24 @@ mod1 <- "# a path
          ab := a * b
          total := cp + ab"
 
-fsem1 <- sem(mod1, data = df_video_intervention, se = "bootstrap", bootstrap = 10000) # fit structural equation models
+fsem1 <- sem(mod1, data = df_video_intervention_us, se = "bootstrap", bootstrap = 10000) # fit structural equation models
 
 sink("fsem.txt")
 summary(fsem1)
 sink()
 
-model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope + age + gender 
-             + residence + education + occupation + income)
-model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence + age + gender + residence + education + occupation + income, family = "binomial")
-sem <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
+#model1 <- lm(data = df_video_intervention_us, vaccine_confidence ~ hope + age + gender 
+#             + residence + education + occupation + income)
+#model2 <- glm(data = df_video_intervention_us, vaccination_status ~ hope + vaccine_confidence + age + gender + residence + education + occupation + income, family = "binomial")
+#sem <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
 
-sink("sem.txt")
-summary(sem)
-plot(sem)
-sink()
+#sink("sem.txt")
+#summary(sem)
+#plot(sem)
+#sink()
 
-model1 <- lm(data = df_video_intervention, vaccine_confidence ~ hope)
-model2 <- glm(data = df_video_intervention, vaccination_status ~ hope + vaccine_confidence, family = "binomial")
+model1 <- lm(data = df_video_intervention_us, vaccine_confidence ~ hope)
+model2 <- glm(data = df_video_intervention_us, vaccination_status ~ hope + vaccine_confidence, family = "binomial")
 sem0 <- mediate(model1, model2, treat = "hope", mediator = "vaccine_confidence", boot = T)
 
 summary(sem0)
@@ -672,7 +680,7 @@ df_watchingtime_A <- df_watchingtime_A %>%
 
  tA <- df_watchingtime_A %>%
   group_by(group)%>%
-  summarise_at(vars(df_watchingtime_A),list(~mean(.)))
+  summarise_at(vars(df_watchingtime_A),list(~mean(.), ~count(.)))
  
  #videoB
  
